@@ -5,12 +5,10 @@ package rke1
 import (
 	"testing"
 
-	cis "github.com/rancher/tests/validation/provisioning/resources/cisbenchmark"
-	"github.com/rancher/tests/actions"
-	"github.com/rancher/tests/actions/catalog"
-	mgithub.com/rancher/tests/actionsnts/rancher/generated/management/v3"
-	egithub.com/rancher/tests/actionsrd/extensions/clusters"
-	"github.com/rancher/tests/actionsters/kubernetesversions"
+	"github.com/rancher/shepherd/clients/rancher"
+	"github.com/rancher/shepherd/clients/rancher/catalog"
+	"github.com/rancher/shepherd/extensions/clusters"
+	"github.com/rancher/shepherd/extensions/clusters/kubernetesversions"
 	"github.com/rancher/shepherd/extensions/users"
 	password "github.com/rancher/shepherd/extensions/users/passwordgenerator"
 	"github.com/rancher/shepherd/pkg/config"
@@ -22,6 +20,7 @@ import (
 	"github.com/rancher/tests/actions/provisioning"
 	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/rancher/tests/actions/reports"
+	cis "github.com/rancher/tests/validation/provisioning/resources/cisbenchmark"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
