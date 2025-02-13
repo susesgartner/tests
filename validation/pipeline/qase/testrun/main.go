@@ -7,8 +7,8 @@ import (
 	"log"
 	"os"
 
+	qasedefaults "github.com/rancher/tests/validation/pipeline/qase"
 	"github.com/sirupsen/logrus"
-	qasedefaults "github.com/slickwarren/rancher-tests/validation/pipeline/qase"
 	qase "go.qase.io/client"
 	"gopkg.in/yaml.v2"
 )

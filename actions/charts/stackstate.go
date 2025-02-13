@@ -9,10 +9,10 @@ import (
 	"github.com/rancher/shepherd/extensions/defaults"
 	"github.com/rancher/shepherd/pkg/api/steve/catalog/types"
 	"github.com/rancher/shepherd/pkg/wait"
+	kubenamespaces "github.com/rancher/tests/actions/kubeapi/namespaces"
+	"github.com/rancher/tests/actions/namespaces"
+	"github.com/rancher/tests/actions/observability"
 	log "github.com/sirupsen/logrus"
-	kubenamespaces "github.com/slickwarren/rancher-tests/actions/kubeapi/namespaces"
-	"github.com/slickwarren/rancher-tests/actions/namespaces"
-	"github.com/slickwarren/rancher-tests/actions/observability"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 )

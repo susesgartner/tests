@@ -4,8 +4,8 @@ import (
 	"github.com/rancher/shepherd/extensions/clusters/aks"
 	"github.com/rancher/shepherd/extensions/clusters/eks"
 	"github.com/rancher/shepherd/extensions/clusters/gke"
-	"github.com/slickwarren/rancher-tests/actions/machinepools"
-	nodepools "github.com/slickwarren/rancher-tests/actions/rke1/nodepools"
+	"github.com/rancher/tests/actions/machinepools"
+	nodepools "github.com/rancher/tests/actions/rke1/nodepools"
 	corev1 "k8s.io/api/core/v1"
 )
 

@@ -9,8 +9,8 @@ import (
 	"github.com/rancher/shepherd/clients/rancher"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/pkg/session"
-	"github.com/slickwarren/rancher-tests/actions/clusters"
-	"github.com/slickwarren/rancher-tests/actions/upgradeinput"
+	"github.com/rancher/tests/actions/clusters"
+	"github.com/rancher/tests/actions/upgradeinput"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )

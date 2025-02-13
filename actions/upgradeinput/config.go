@@ -1,6 +1,6 @@
 package upgradeinput
 
-import "github.com/slickwarren/rancher-tests/actions/provisioninginput"
+import "github.com/rancher/tests/actions/provisioninginput"
 
 type PSACT string
 

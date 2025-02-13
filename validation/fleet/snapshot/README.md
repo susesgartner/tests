@@ -24,5 +24,5 @@ Additionally, S3 is a supported restore option. If you choose to use S3, then yo
 These tests utilize Go build tags. Due to this, see the below example on how to run the tests:
 
 ### Snapshot restore
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/snapshot --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestSnapshotRestoreWithFleetTestSuite/TestFleetThenSnapshotRestore"` \
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/snapshot --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestSnapshotRestoreWithFleetTestSuite/TestSnapshotThenFleetRestore"`
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/snapshot --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestSnapshotRestoreWithFleetTestSuite/TestFleetThenSnapshotRestore"` \
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/snapshot --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestSnapshotRestoreWithFleetTestSuite/TestSnapshotThenFleetRestore"`

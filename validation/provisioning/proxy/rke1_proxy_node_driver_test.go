@@ -5,7 +5,8 @@ package proxy
 import (
 	"testing"
 
-	"github.com/rancher/shepherd/clients/corral"
+	"github.com/rancher/tests/validation/pipeline/rancherha/corralha"
+	"github.com/rancher/tests/actions
 	"github.com/rancher/shepherd/clients/rancher"
 	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
 	"github.com/rancher/shepherd/extensions/clusters"
@@ -16,9 +17,8 @@ import (
 	"github.com/rancher/shepherd/pkg/environmentflag"
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
 	"github.com/rancher/shepherd/pkg/session"
-	"github.com/slickwarren/rancher-tests/actions/provisioning/permutations"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
-	"github.com/slickwarren/rancher-tests/validation/pipeline/rancherha/corralha"
+	"github.com/rancher/tests/actions/provisioning/permutations"
+	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -122,5 +122,6 @@ func (r *ProxyRKE1ProvisioningTestSuite) TestProxyRKE1ClusterProvisioning() {
 }
 
 func TestProxyRKE1ProvisioningTestSuite(t *testing.T) {
+	t.Skip("This test has been deprecated; check https://github.com/rancher/tfp-automation for updated tests")
 	suite.Run(t, new(ProxyRKE1ProvisioningTestSuite))
 }

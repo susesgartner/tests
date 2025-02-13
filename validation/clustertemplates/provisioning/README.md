@@ -64,4 +64,4 @@ amazonec2Config:
 
 These tests utilize Go build tags. Due to this, see the below example on how to run the test:
 
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/provisioning/clustertemplates --junitfile results.xml -- -timeout=120m -tags=validation -v -run "TestClusterTemplateRKE1ProvisioningTestSuite/TestProvisioningRKE1ClusterWithClusterTemplate"`
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/provisioning/clustertemplates --junitfile results.xml -- -timeout=120m -tags=validation -v -run "TestClusterTemplateRKE1ProvisioningTestSuite/TestProvisioningRKE1ClusterWithClusterTemplate"`

@@ -4,8 +4,8 @@ import (
 	v1 "github.com/rancher/rancher/pkg/apis/catalog.cattle.io/v1"
 	rkev1 "github.com/rancher/rancher/pkg/apis/rke.cattle.io/v1"
 	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
-	"github.com/slickwarren/rancher-tests/actions/machinepools"
-	nodepools "github.com/slickwarren/rancher-tests/actions/rke1/nodepools"
+	"github.com/rancher/tests/actions/machinepools"
+	nodepools "github.com/rancher/tests/actions/rke1/nodepools"
 )
 
 type Version string
@@ -204,6 +204,7 @@ type Config struct {
 	NodePools                      []NodePools                              `json:"nodePools,omitempty" yaml:"nodePools,omitempty"`
 	MachinePools                   []MachinePools                           `json:"machinePools,omitempty" yaml:"machinePools,omitempty"`
 	CloudProvider                  string                                   `json:"cloudProvider,omitempty" yaml:"cloudProvider,omitempty"`
+	EnableNetworkPolicy            bool                                     `json:"enableNetworkPolicy,omitempty" yaml:"enableNetworkPolicy,omitempty"`
 	Providers                      []string                                 `json:"providers,omitempty" yaml:"providers,omitempty"`
 	NodeProviders                  []string                                 `json:"nodeProviders,omitempty" yaml:"nodeProviders,omitempty"`
 	Hardened                       bool                                     `json:"hardened,omitempty" yaml:"hardened,omitempty"`

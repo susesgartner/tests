@@ -19,10 +19,10 @@ import (
 	"github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults"
 	"github.com/rancher/shepherd/extensions/users"
-	rbacapi "github.com/slickwarren/rancher-tests/actions/kubeapi/rbac"
-	"github.com/slickwarren/rancher-tests/actions/provisioning"
+	rbacapi "github.com/rancher/tests/actions/kubeapi/rbac"
+	"github.com/rancher/tests/actions/provisioning"
 
-	"github.com/slickwarren/rancher-tests/actions/rbac"
+	"github.com/rancher/tests/actions/rbac"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kwait "k8s.io/apimachinery/pkg/util/wait"
 )
@@ -45,8 +45,6 @@ func (gr *GlobalRolesV2TestSuite) SetupSuite() {
 	require.NoError(gr.T(), err)
 
 	gr.client = client
-
-	provisioning.DisableUpdateConfig(gr.client)
 }
 
 func (gr *GlobalRolesV2TestSuite) validateRBACResources(createdUser *management.User, inheritedRoles []string) (string, int) {

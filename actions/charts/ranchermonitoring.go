@@ -13,8 +13,8 @@ import (
 	"github.com/rancher/shepherd/extensions/defaults"
 	"github.com/rancher/shepherd/pkg/api/steve/catalog/types"
 	"github.com/rancher/shepherd/pkg/wait"
-	kubenamespaces "github.com/slickwarren/rancher-tests/actions/kubeapi/namespaces"
-	"github.com/slickwarren/rancher-tests/actions/namespaces"
+	kubenamespaces "github.com/rancher/tests/actions/kubeapi/namespaces"
+	"github.com/rancher/tests/actions/namespaces"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 )

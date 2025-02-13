@@ -12,16 +12,16 @@ import (
 	"github.com/rancher/shepherd/extensions/cloudcredentials/harvester"
 	"github.com/rancher/shepherd/extensions/cloudcredentials/linode"
 	"github.com/rancher/shepherd/extensions/cloudcredentials/vsphere"
-	"github.com/slickwarren/rancher-tests/actions/machinepools"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/machinepools"
+	"github.com/rancher/tests/actions/provisioninginput"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
-	"github.com/slickwarren/rancher-tests/actions/rke1/nodetemplates"
-	r1aws "github.com/slickwarren/rancher-tests/actions/rke1/nodetemplates/aws"
-	r1azure "github.com/slickwarren/rancher-tests/actions/rke1/nodetemplates/azure"
-	r1harvester "github.com/slickwarren/rancher-tests/actions/rke1/nodetemplates/harvester"
-	r1linode "github.com/slickwarren/rancher-tests/actions/rke1/nodetemplates/linode"
-	r1vsphere "github.com/slickwarren/rancher-tests/actions/rke1/nodetemplates/vsphere"
+	"github.com/rancher/tests/actions/rke1/nodetemplates"
+	r1aws "github.com/rancher/tests/actions/rke1/nodetemplates/aws"
+	r1azure "github.com/rancher/tests/actions/rke1/nodetemplates/azure"
+	r1harvester "github.com/rancher/tests/actions/rke1/nodetemplates/harvester"
+	r1linode "github.com/rancher/tests/actions/rke1/nodetemplates/linode"
+	r1vsphere "github.com/rancher/tests/actions/rke1/nodetemplates/vsphere"
 )
 
 type CloudCredFunc func(rancherClient *rancher.Client, credentials cloudcredentials.CloudCredential) (*v1.SteveAPIObject, error)

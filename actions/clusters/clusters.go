@@ -13,8 +13,8 @@ import (
 	steveV1 "github.com/rancher/shepherd/clients/rancher/v1"
 	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	"github.com/rancher/shepherd/extensions/clusters"
+	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/sirupsen/logrus"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -404,6 +404,7 @@ func NewK3SRKE2ClusterConfig(clusterName, namespace string, clustersConfig *Clus
 		ClusterAgentDeploymentCustomization: clusterAgentDeploymentCustomization,
 		FleetAgentDeploymentCustomization:   fleetAgentDeploymentCustomization,
 		AgentEnvVars:                        agentEnvVars,
+		EnableNetworkPolicy:                 &clustersConfig.EnableNetworkPolicy,
 	}
 
 	if clustersConfig.AgentEnvVars != nil {

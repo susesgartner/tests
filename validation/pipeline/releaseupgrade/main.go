@@ -8,10 +8,10 @@ import (
 	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/environmentflag"
 	"github.com/rancher/shepherd/pkg/file"
+	"github.com/rancher/tests/actions/pipeline"
+	"github.com/rancher/tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/upgradeinput"
 	"github.com/sirupsen/logrus"
-	"github.com/slickwarren/rancher-tests/actions/pipeline"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
-	"github.com/slickwarren/rancher-tests/actions/upgradeinput"
 )
 
 var (

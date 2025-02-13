@@ -14,7 +14,7 @@ import (
 	"github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults/stevetypes"
 	"github.com/rancher/shepherd/extensions/etcdsnapshot"
-	"github.com/slickwarren/rancher-tests/actions/kubeapi/nodes"
+	"github.com/rancher/tests/actions/kubeapi/nodes"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/sirupsen/logrus"

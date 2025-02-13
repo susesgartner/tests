@@ -9,7 +9,7 @@ import (
 	"github.com/rancher/shepherd/extensions/rancherversion"
 	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/session"
-	"github.com/slickwarren/rancher-tests/actions/scalinginput"
+	"github.com/rancher/tests/actions/scalinginput"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )

@@ -19,6 +19,6 @@ rancher:
 
 These tests utilize Go build tags. Due to this, see the below examples on how to run the tests:
 
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/cli --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestCLITestSuite$"`
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/cli --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestCLITestSuite$"`
 
 If the specified test passes immediately without warning, try adding the `-count=1` flag to get around this issue. This will avoid previous results from interfering with the new test run.

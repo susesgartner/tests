@@ -8,9 +8,9 @@ import (
 	"github.com/rancher/shepherd/clients/rancher"
 	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/session"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
-	nodepools "github.com/slickwarren/rancher-tests/actions/rke1/nodepools"
-	"github.com/slickwarren/rancher-tests/actions/scalinginput"
+	"github.com/rancher/tests/actions/provisioninginput"
+	nodepools "github.com/rancher/tests/actions/rke1/nodepools"
+	"github.com/rancher/tests/actions/scalinginput"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )

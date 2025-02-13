@@ -7,15 +7,16 @@ import (
 
 	"github.com/rancher/shepherd/clients/rancher"
 	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
+	"github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/clusters/kubernetesversions"
 	"github.com/rancher/shepherd/extensions/users"
 	password "github.com/rancher/shepherd/extensions/users/passwordgenerator"
 	"github.com/rancher/shepherd/pkg/config"
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
 	"github.com/rancher/shepherd/pkg/session"
-	"github.com/slickwarren/rancher-tests/actions/machinepools"
-	"github.com/slickwarren/rancher-tests/actions/provisioning/permutations"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/machinepools"
+	"github.com/rancher/tests/actions/provisioning/permutations"
+	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -42,6 +43,11 @@ func (r *RKE2ACETestSuite) SetupSuite() {
 	require.NoError(r.T(), err)
 
 	if r.provisioningConfig.RKE2KubernetesVersions == nil {
+		rke2Versions, err := kubernetesversions.Default(r.client, clusters.RKE2ClusterType.String(), nil)
+		require.NoError(r.T(), err)
+
+		r.provisioningConfig.RKE2KubernetesVersions = rke2Versions
+	} else if r.provisioningConfig.RKE2KubernetesVersions[0] == "all" {
 		rke2Versions, err := kubernetesversions.ListRKE2AllVersions(r.client)
 		require.NoError(r.T(), err)
 

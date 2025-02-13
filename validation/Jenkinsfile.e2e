@@ -1,7 +1,7 @@
 #!groovy
 node {
-    def rootPath = "/root/go/src/github.com/slickwarren/rancher-tests/"
-    def workPath = "/root/go/src/github.com/slickwarren/rancher-tests/validation/"
+    def rootPath = "/root/go/src/github.com/rancher/rancher/"
+    def workPath = "/root/go/src/github.com/rancher/tests/validation/"
     def job_name = "${JOB_NAME}"
     if (job_name.contains('/')) { 
       job_names = job_name.split('/')
@@ -12,7 +12,7 @@ node {
     def cleanupTestContainer = "${job_name}${env.BUILD_NUMBER}-cleanuptest"
     def golangImageName = "rancher-validation-${job_name}${env.BUILD_NUMBER}"
     def validationVolume = "ValidationSharedVolume-${job_name}${env.BUILD_NUMBER}"
-    def testsDir = "/root/go/src/github.com/slickwarren/rancher-tests/validation/${env.TEST_PACKAGE}"
+    def testsDir = "/root/go/src/github.com/rancher/tests/validation/${env.TEST_PACKAGE}"
     def testResultsOut = "results.xml"
     def testResultsJSON = "results.json"
     def envFile = ".env"
@@ -105,12 +105,12 @@ node {
           dir ("./") {
             stage('Configure and Build') {
               if (env.AWS_SSH_PEM_KEY && env.AWS_SSH_KEY_NAME) {
-                dir("./rancher/validation/.ssh") {
+                dir("./rancher/tests/v2/validation/.ssh") {
                   def decoded = new String(AWS_SSH_PEM_KEY.decodeBase64())
                   writeFile file: AWS_SSH_KEY_NAME, text: decoded
                 }
               }
-              dir("./rancher/validation") {
+              dir("./rancher/tests/v2/validation") {
                 def filename = "config.yaml"
                 def configContents = env.CONFIG
 
@@ -118,8 +118,8 @@ node {
                 env.CATTLE_TEST_CONFIG = "${workPath}"+filename
               }
               dir ("./") {
-                sh "./rancher/validation/configure.sh"
-                sh "docker build . -f ./rancher/validation/Dockerfile.e2e --build-arg CORRAL_VERSION=${env.CORRAL_VERSION} -t ${golangImageName}"
+                sh "./rancher/tests/v2/validation/configure.sh"
+                sh "docker build . -f ./rancher/tests/v2/validation/Dockerfile.e2e --build-arg CORRAL_VERSION=${env.CORRAL_VERSION} -t ${golangImageName}"
                 sh "docker volume create --name ${validationVolume}"
               }
             }

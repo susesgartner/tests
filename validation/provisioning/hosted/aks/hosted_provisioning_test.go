@@ -13,9 +13,9 @@ import (
 	"github.com/rancher/shepherd/pkg/config"
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
 	"github.com/rancher/shepherd/pkg/session"
-	"github.com/slickwarren/rancher-tests/actions/provisioning"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
-	"github.com/slickwarren/rancher-tests/actions/reports"
+	"github.com/rancher/tests/actions/provisioning"
+	"github.com/rancher/tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/reports"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )

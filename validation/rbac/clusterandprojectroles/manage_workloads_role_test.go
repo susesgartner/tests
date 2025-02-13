@@ -14,12 +14,12 @@ import (
 	"github.com/rancher/shepherd/extensions/workloads"
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
 	"github.com/rancher/shepherd/pkg/session"
+	projectsapi "github.com/rancher/tests/actions/projects"
+	rbac "github.com/rancher/tests/actions/rbac"
+	"github.com/rancher/tests/actions/workloads/daemonset"
+	"github.com/rancher/tests/actions/workloads/deployment"
+	"github.com/rancher/tests/actions/workloads/pods"
 	log "github.com/sirupsen/logrus"
-	projectsapi "github.com/slickwarren/rancher-tests/actions/projects"
-	rbac "github.com/slickwarren/rancher-tests/actions/rbac"
-	"github.com/slickwarren/rancher-tests/actions/workloads/daemonset"
-	"github.com/slickwarren/rancher-tests/actions/workloads/deployment"
-	"github.com/slickwarren/rancher-tests/actions/workloads/pods"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	appsV1 "k8s.io/api/apps/v1"
@@ -228,7 +228,7 @@ func (mw *ManageWorkloadsRoleTestSuite) TestManageWorkloadsRoleForDeployments() 
 	workloadUser, workloadUserClient := mw.testSetupWorkloadUserAndAddToProject(adminProject)
 
 	log.Infof("As user %s, create a new deployment in the namespace within the project %s.", workloadUser.Name, adminProject.Name)
-	createdDeployment, err := deployment.CreateDeployment(workloadUserClient, mw.cluster.ID, adminNamespace.Name, 1, "", "", false, false, true)
+	createdDeployment, err := deployment.CreateDeployment(workloadUserClient, mw.cluster.ID, adminNamespace.Name, 1, "", "", false, false, false, true)
 	require.NoError(mw.T(), err, "Failed to create the deployment.")
 
 	log.Infof("As user %s, list the deployment %s.", workloadUser.Username, createdDeployment.Name)

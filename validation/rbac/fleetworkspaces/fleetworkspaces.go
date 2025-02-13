@@ -10,7 +10,7 @@ import (
 	"github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults"
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
-	"github.com/slickwarren/rancher-tests/actions/kubeapi/rbac"
+	"github.com/rancher/tests/actions/kubeapi/rbac"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	kwait "k8s.io/apimachinery/pkg/util/wait"

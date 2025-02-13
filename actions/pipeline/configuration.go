@@ -6,10 +6,10 @@ import (
 	"github.com/rancher/shepherd/extensions/clusters/eks"
 	"github.com/rancher/shepherd/extensions/clusters/gke"
 	"github.com/rancher/shepherd/pkg/config"
+	"github.com/rancher/tests/actions/machinepools"
+	"github.com/rancher/tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/rke1/nodetemplates"
 	"github.com/sirupsen/logrus"
-	"github.com/slickwarren/rancher-tests/actions/machinepools"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
-	"github.com/slickwarren/rancher-tests/actions/rke1/nodetemplates"
 )
 
 // UpdateRancherDownstreamClusterFields is function that updates the cattle config's providers, node providers,

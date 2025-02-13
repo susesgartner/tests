@@ -11,12 +11,12 @@ import (
 	"github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/users"
 	"github.com/rancher/shepherd/pkg/session"
+	"github.com/rancher/tests/actions/kubeapi/namespaces"
+	"github.com/rancher/tests/actions/kubeapi/projects"
+	project "github.com/rancher/tests/actions/projects"
+	rbac "github.com/rancher/tests/actions/rbac"
+	deployment "github.com/rancher/tests/actions/workloads/deployment"
 	log "github.com/sirupsen/logrus"
-	"github.com/slickwarren/rancher-tests/actions/kubeapi/namespaces"
-	"github.com/slickwarren/rancher-tests/actions/kubeapi/projects"
-	project "github.com/slickwarren/rancher-tests/actions/projects"
-	rbac "github.com/slickwarren/rancher-tests/actions/rbac"
-	deployment "github.com/slickwarren/rancher-tests/actions/workloads/deployment"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
@@ -271,7 +271,7 @@ func (pr *ProjectsTestSuite) TestProjectWithResourceQuotaAndContainerDefaultReso
 	require.NoError(pr.T(), err)
 
 	log.Info("Create a deployment in the namespace with two replicas and verify that the pods are created.")
-	createdDeployment, err := deployment.CreateDeployment(standardUserClient, pr.cluster.ID, createdNamespace.Name, 2, "", "", false, false, true)
+	createdDeployment, err := deployment.CreateDeployment(standardUserClient, pr.cluster.ID, createdNamespace.Name, 2, "", "", false, false, false, true)
 	require.NoError(pr.T(), err, "Failed to create deployment in the namespace")
 
 	log.Info("Verify that the resource limits and requests for the container in the pod spec is accurate.")

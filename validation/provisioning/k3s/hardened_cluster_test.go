@@ -5,23 +5,23 @@ package k3s
 import (
 	"testing"
 
-	"github.com/rancher/shepherd/clients/rancher"
-	"github.com/rancher/shepherd/clients/rancher/catalog"
-	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
-	extensionscluster "github.com/rancher/shepherd/extensions/clusters"
-	"github.com/rancher/shepherd/extensions/clusters/kubernetesversions"
+	cis "github.com/rancher/tests/validation/provisioning/resources/cisbenchmark"
+	"github.com/rancher/tests/actions"
+	"github.com/rancher/tests/actions/catalog"
+	mgithub.com/rancher/tests/actionsnts/rancher/generated/management/v3"
+	egithub.com/rancher/tests/actionsrd/extensions/clusters"
+	"github.com/rancher/tests/actionsters/kubernetesversions"
 	"github.com/rancher/shepherd/extensions/users"
 	password "github.com/rancher/shepherd/extensions/users/passwordgenerator"
 	"github.com/rancher/shepherd/pkg/config"
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
 	"github.com/rancher/shepherd/pkg/session"
-	"github.com/slickwarren/rancher-tests/actions/charts"
-	"github.com/slickwarren/rancher-tests/actions/clusters"
-	"github.com/slickwarren/rancher-tests/actions/projects"
-	"github.com/slickwarren/rancher-tests/actions/provisioning"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
-	"github.com/slickwarren/rancher-tests/actions/reports"
-	cis "github.com/slickwarren/rancher-tests/validation/provisioning/resources/cisbenchmark"
+	"github.com/rancher/tests/actions/charts"
+	"github.com/rancher/tests/actions/clusters"
+	"github.com/rancher/tests/actions/projects"
+	"github.com/rancher/tests/actions/provisioning"
+	"github.com/rancher/tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/reports"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -54,6 +54,11 @@ func (c *HardenedK3SClusterProvisioningTestSuite) SetupSuite() {
 	c.client = client
 
 	if c.provisioningConfig.K3SKubernetesVersions == nil {
+		k3sVersions, err := kubernetesversions.Default(c.client, extensionscluster.K3SClusterType.String(), nil)
+		require.NoError(c.T(), err)
+
+		c.provisioningConfig.K3SKubernetesVersions = k3sVersions
+	} else if c.provisioningConfig.K3SKubernetesVersions[0] == "all" {
 		k3sVersions, err := kubernetesversions.ListK3SAllVersions(c.client)
 		require.NoError(c.T(), err)
 

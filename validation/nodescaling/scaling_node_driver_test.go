@@ -13,9 +13,9 @@ import (
 	"github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/session"
-	"github.com/slickwarren/rancher-tests/actions/machinepools"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
-	"github.com/slickwarren/rancher-tests/actions/scalinginput"
+	"github.com/rancher/tests/actions/machinepools"
+	"github.com/rancher/tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/scalinginput"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )

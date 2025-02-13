@@ -1,3 +1,5 @@
+//go:build (validation || infra.rke1 || cluster.nodedriver || stress) && !infra.any && !infra.aks && !infra.eks && !infra.gke && !infra.rke2k3s && !cluster.any && !sanity
+
 package clustertemplates
 
 import (
@@ -10,10 +12,10 @@ import (
 	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/namegenerator"
 	"github.com/rancher/shepherd/pkg/session"
-	"github.com/slickwarren/rancher-tests/actions/clusters"
-	"github.com/slickwarren/rancher-tests/actions/clustertemplates"
-	"github.com/slickwarren/rancher-tests/actions/provisioning"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/clusters"
+	"github.com/rancher/tests/actions/clustertemplates"
+	"github.com/rancher/tests/actions/provisioning"
+	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 

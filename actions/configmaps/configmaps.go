@@ -6,7 +6,7 @@ import (
 	"github.com/rancher/shepherd/clients/rancher"
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
 	"github.com/rancher/shepherd/pkg/wrangler"
-	"github.com/slickwarren/rancher-tests/actions/kubeapi/configmaps"
+	"github.com/rancher/tests/actions/kubeapi/configmaps"
 	coreV1 "k8s.io/api/core/v1"
 )
 

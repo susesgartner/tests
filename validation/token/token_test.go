@@ -9,7 +9,7 @@ import (
 	fv3 "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
 	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
 	"github.com/rancher/shepherd/pkg/session"
-	"github.com/slickwarren/rancher-tests/actions/kubeapi/tokens"
+	"github.com/rancher/tests/actions/kubeapi/tokens"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"

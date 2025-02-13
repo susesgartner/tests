@@ -15,8 +15,8 @@ import (
 	"github.com/rancher/shepherd/extensions/defaults"
 	extnodes "github.com/rancher/shepherd/extensions/nodes"
 	"github.com/rancher/shepherd/pkg/nodes"
+	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/sirupsen/logrus"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
 	"golang.org/x/crypto/ssh"
 	"k8s.io/apimachinery/pkg/util/wait"
 )

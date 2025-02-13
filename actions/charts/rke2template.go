@@ -11,7 +11,7 @@ import (
 	"github.com/rancher/shepherd/extensions/wait"
 	"github.com/rancher/shepherd/pkg/api/steve/catalog/types"
 	"github.com/rancher/shepherd/pkg/namegenerator"
-	"github.com/slickwarren/rancher-tests/actions/projects"
+	"github.com/rancher/tests/actions/projects"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

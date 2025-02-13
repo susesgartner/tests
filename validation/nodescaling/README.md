@@ -50,10 +50,10 @@ provisioningInput:
 These tests utilize Go build tags. Due to this, see the below examples on how to run the tests:
 
 ### RKE1
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestRKE1NodeReplacingTestSuite/TestReplacingRKE1Nodes"`
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestRKE1NodeReplacingTestSuite/TestReplacingRKE1Nodes"`
 
 ### RKE2 | K3S
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestNodeReplacingTestSuite/TestReplacingNodes"`
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestNodeReplacingTestSuite/TestReplacingNodes"`
 
 ## Scaling Existing Node Pools
 Similar to the `provisioning` tests, the node scaling tests have static test cases as well as dynamicInput tests you can specify. In order to run the dynamicInput tests, you will need to define the `scalingInput` block in your config file. This block defines the quantity you would like the pool to be scaled up/down to. See an example below that accounts for node drivers, custom clusters and hosted clusters:
@@ -84,28 +84,28 @@ Additionally, for AKS, you must have `enableAutoScaling` set to true if you spec
 These tests utilize Go build tags. Due to this, see the below examples on how to run the tests:
 
 ### RKE1
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestRKE1NodeScalingTestSuite/TestScalingRKE1NodePools"` \
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestRKE1NodeScalingTestSuite/TestScalingRKE1NodePoolsDynamicInput"` \
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestRKE1CustomClusterNodeScalingTestSuite/TestScalingRKE1CustomClusterNodes"` \
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestRKE1CustomClusterNodeScalingTestSuite/TestScalingRKE1CustomClusterNodesDynamicInput"`
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestRKE1NodeScalingTestSuite/TestScalingRKE1NodePools"` \
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestRKE1NodeScalingTestSuite/TestScalingRKE1NodePoolsDynamicInput"` \
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestRKE1CustomClusterNodeScalingTestSuite/TestScalingRKE1CustomClusterNodes"` \
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestRKE1CustomClusterNodeScalingTestSuite/TestScalingRKE1CustomClusterNodesDynamicInput"`
 
 ### RKE2 | K3S
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestNodeScalingTestSuite/TestScalingNodePools"` \
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestNodeScalingTestSuite/TestScalingNodePoolsDynamicInput"` \
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestCustomClusterNodeScalingTestSuite/TestScalingCustomClusterNodes"` \
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestCustomClusterNodeScalingTestSuite/TestScalingCustomClusterNodesDynamicInput"`
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestNodeScalingTestSuite/TestScalingNodePools"` \
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestNodeScalingTestSuite/TestScalingNodePoolsDynamicInput"` \
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestCustomClusterNodeScalingTestSuite/TestScalingCustomClusterNodes"` \
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestCustomClusterNodeScalingTestSuite/TestScalingCustomClusterNodesDynamicInput"`
 
 ### AKS
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestAKSNodeScalingTestSuite/TestScalingAKSNodePools"` \
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestAKSNodeScalingTestSuite/TestScalingAKSNodePoolsDynamicInput"`
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestAKSNodeScalingTestSuite/TestScalingAKSNodePools"` \
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestAKSNodeScalingTestSuite/TestScalingAKSNodePoolsDynamicInput"`
 
 ### EKS
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestEKSNodeScalingTestSuite/TestScalingEKSNodePools"` \
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestEKSNodeScalingTestSuite/TestScalingEKSNodePoolsDynamicInput"`
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestEKSNodeScalingTestSuite/TestScalingEKSNodePools"` \
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestEKSNodeScalingTestSuite/TestScalingEKSNodePoolsDynamicInput"`
 
 ### GKE
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestGKENodeScalingTestSuite/TestScalingGKENodePools"` \
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestGKENodeScalingTestSuite/TestScalingGKENodePoolsDynamicInput"`
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestGKENodeScalingTestSuite/TestScalingGKENodePools"` \
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestGKENodeScalingTestSuite/TestScalingGKENodePoolsDynamicInput"`
 
 If the specified test passes immediately without warning, try adding the `-count=1` flag to get around this issue. This will avoid previous results from interfering with the new test run.
 
@@ -118,4 +118,4 @@ If UnhealthyNodeTimeout is not set, the test(s) in this suite will wait for the 
 Each test requires 2 or more nodes in the specified role's pool. i.e. if you're running the entire suite, you would need 3etcd, 2controlplane, 2worker, minimum. 
 
 ### RKE2 | K3S
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestEtcdAutoReplaceRKE2K3S/TestEtcdAutoReplaceRKE2K3S"`
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/nodescaling --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestEtcdAutoReplaceRKE2K3S/TestEtcdAutoReplaceRKE2K3S"`

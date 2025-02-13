@@ -10,7 +10,7 @@ import (
 	"github.com/rancher/shepherd/clients/rancher"
 	steveV1 "github.com/rancher/shepherd/clients/rancher/v1"
 	"github.com/rancher/shepherd/extensions/charts"
-	"github.com/slickwarren/rancher-tests/actions/workloads"
+	"github.com/rancher/tests/actions/workloads"
 	kwait "k8s.io/apimachinery/pkg/util/wait"
 )
 

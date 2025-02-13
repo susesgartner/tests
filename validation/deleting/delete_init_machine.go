@@ -7,8 +7,8 @@ import (
 	"github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults"
 	"github.com/rancher/shepherd/extensions/steve"
+	"github.com/rancher/tests/actions/machinepools"
 	"github.com/sirupsen/logrus"
-	"github.com/slickwarren/rancher-tests/actions/machinepools"
 	"github.com/stretchr/testify/require"
 )
 

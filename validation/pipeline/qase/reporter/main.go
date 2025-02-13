@@ -10,10 +10,10 @@ import (
 	"strings"
 
 	"github.com/antihax/optional"
+	qasedefaults "github.com/rancher/tests/validation/pipeline/qase"
+	"github.com/rancher/tests/validation/pipeline/qase/testcase"
+	"github.com/rancher/tests/validation/pipeline/slack"
 	"github.com/sirupsen/logrus"
-	qasedefaults "github.com/slickwarren/rancher-tests/validation/pipeline/qase"
-	"github.com/slickwarren/rancher-tests/validation/pipeline/qase/testcase"
-	"github.com/slickwarren/rancher-tests/validation/pipeline/slack"
 	qase "go.qase.io/client"
 	"gopkg.in/yaml.v2"
 )

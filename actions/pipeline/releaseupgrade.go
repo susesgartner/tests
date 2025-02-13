@@ -3,8 +3,8 @@ package pipeline
 import (
 	"os"
 
+	"github.com/rancher/tests/actions/upgradeinput"
 	"github.com/sirupsen/logrus"
-	"github.com/slickwarren/rancher-tests/actions/upgradeinput"
 	"gopkg.in/yaml.v2"
 )
 

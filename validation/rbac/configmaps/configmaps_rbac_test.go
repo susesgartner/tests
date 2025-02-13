@@ -11,11 +11,11 @@ import (
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
 	"github.com/rancher/shepherd/pkg/session"
 	"github.com/rancher/shepherd/pkg/wrangler"
+	"github.com/rancher/tests/actions/configmaps"
+	"github.com/rancher/tests/actions/projects"
+	"github.com/rancher/tests/actions/rbac"
+	deployment "github.com/rancher/tests/actions/workloads/deployment"
 	log "github.com/sirupsen/logrus"
-	"github.com/slickwarren/rancher-tests/actions/configmaps"
-	"github.com/slickwarren/rancher-tests/actions/projects"
-	"github.com/slickwarren/rancher-tests/actions/rbac"
-	deployment "github.com/slickwarren/rancher-tests/actions/workloads/deployment"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -87,7 +87,7 @@ func (cm *ConfigmapsRBACTestSuite) TestCreateConfigmapAsVolume() {
 			switch tt.role.String() {
 			case rbac.ClusterOwner.String(), rbac.ProjectOwner.String(), rbac.ProjectMember.String():
 				require.NoError(cm.T(), err)
-				_, err = deployment.CreateDeployment(standardUserClient, cm.cluster.ID, namespace.Name, 1, "", configMapCreatedByUser.Name, false, true, true)
+				_, err = deployment.CreateDeployment(standardUserClient, cm.cluster.ID, namespace.Name, 1, "", configMapCreatedByUser.Name, false, true, false, true)
 				require.NoError(cm.T(), err)
 				getConfigMapAsAdmin, err := cm.ctxAsAdmin.Core.ConfigMap().Get(namespace.Name, configMapCreatedByUser.Name, metav1.GetOptions{})
 				require.NoError(cm.T(), err)
@@ -127,7 +127,7 @@ func (cm *ConfigmapsRBACTestSuite) TestCreateConfigmapAsEnvVar() {
 			switch tt.role.String() {
 			case rbac.ClusterOwner.String(), rbac.ProjectOwner.String(), rbac.ProjectMember.String():
 				require.NoError(cm.T(), err)
-				_, err = deployment.CreateDeployment(standardUserClient, cm.cluster.ID, namespace.Name, 1, "", configMapCreatedByUser.Name, true, false, true)
+				_, err = deployment.CreateDeployment(standardUserClient, cm.cluster.ID, namespace.Name, 1, "", configMapCreatedByUser.Name, true, false, false, true)
 				require.NoError(cm.T(), err)
 				getConfigMapAsAdmin, err := cm.ctxAsAdmin.Core.ConfigMap().Get(namespace.Name, configMapCreatedByUser.Name, metav1.GetOptions{})
 				require.NoError(cm.T(), err)
@@ -177,7 +177,7 @@ func (cm *ConfigmapsRBACTestSuite) TestUpdateConfigmap() {
 			switch tt.role.String() {
 			case rbac.ClusterOwner.String(), rbac.ProjectOwner.String(), rbac.ProjectMember.String():
 				require.NoError(cm.T(), userErr)
-				_, err = deployment.CreateDeployment(cm.client, cm.cluster.ID, namespace.Name, 1, "", configmapCreate.Name, true, false, true)
+				_, err = deployment.CreateDeployment(cm.client, cm.cluster.ID, namespace.Name, 1, "", configmapCreate.Name, true, false, false, true)
 				require.NoError(cm.T(), err)
 				getCMAsAdmin, err := adminDownstreamWranglerContext.Core.ConfigMap().Get(namespace.Name, configMapUpdatedByUser.Name, metav1.GetOptions{})
 				require.NoError(cm.T(), err)
@@ -301,7 +301,7 @@ func (cm *ConfigmapsRBACTestSuite) TestCRUDConfigmapAsClusterMember() {
 		configMapCreatedByClusterMember, err := configmaps.CreateConfigmap(namespace.Name, standardUserClient, data, cm.cluster.ID)
 		require.NoError(cm.T(), err)
 
-		_, err = deployment.CreateDeployment(standardUserClient, cm.cluster.ID, namespace.Name, 1, "", configMapCreatedByClusterMember.Name, true, false, true)
+		_, err = deployment.CreateDeployment(standardUserClient, cm.cluster.ID, namespace.Name, 1, "", configMapCreatedByClusterMember.Name, true, false, false, true)
 
 		require.NoError(cm.T(), err)
 	})

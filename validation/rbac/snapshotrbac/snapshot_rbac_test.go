@@ -12,9 +12,9 @@ import (
 	"github.com/rancher/shepherd/extensions/etcdsnapshot"
 	"github.com/rancher/shepherd/extensions/users"
 	"github.com/rancher/shepherd/pkg/session"
+	"github.com/rancher/tests/actions/projects"
+	rbac "github.com/rancher/tests/actions/rbac"
 	log "github.com/sirupsen/logrus"
-	"github.com/slickwarren/rancher-tests/actions/projects"
-	rbac "github.com/slickwarren/rancher-tests/actions/rbac"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -50,7 +50,7 @@ func (etcd *SnapshotRBACTestSuite) testRKE2K3SSnapshotRBAC(role string, standard
 	log.Info("Test case - Take Etcd snapshot of a cluster as a " + role)
 	_, err := etcdsnapshot.CreateRKE2K3SSnapshot(standardUserClient, etcd.cluster.Name)
 	switch role {
-	case rbac.ClusterOwner.String(), rbac.RestrictedAdmin.String():
+	case rbac.ClusterOwner.String():
 		require.NoError(etcd.T(), err)
 
 	case rbac.ClusterMember.String(), rbac.ProjectOwner.String(), rbac.ProjectMember.String():
@@ -72,7 +72,6 @@ func (etcd *SnapshotRBACTestSuite) TestRKE2K3SSnapshotRBAC() {
 		{"Cluster Member", rbac.ClusterMember.String(), rbac.StandardUser.String()},
 		{"Project Owner", rbac.ProjectOwner.String(), rbac.StandardUser.String()},
 		{"Project Member", rbac.ProjectMember.String(), rbac.StandardUser.String()},
-		{"Restricted Admin", rbac.RestrictedAdmin.String(), rbac.RestrictedAdmin.String()},
 	}
 	for _, tt := range tests {
 		if !(strings.Contains(etcd.cluster.ID, "c-m-")) {

@@ -21,10 +21,10 @@ import (
 	"github.com/rancher/shepherd/extensions/workloads"
 	"github.com/rancher/shepherd/extensions/workloads/pods"
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
+	"github.com/rancher/tests/actions/scalinginput"
+	"github.com/rancher/tests/actions/services"
+	deploy "github.com/rancher/tests/actions/workloads/deployment"
 	"github.com/sirupsen/logrus"
-	"github.com/slickwarren/rancher-tests/actions/scalinginput"
-	"github.com/slickwarren/rancher-tests/actions/services"
-	deploy "github.com/slickwarren/rancher-tests/actions/workloads/deployment"
 	v1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networking "k8s.io/api/networking/v1"
@@ -59,7 +59,6 @@ const (
 
 // CreateAndValidateSnapshotRestore is an e2e helper that determines the engine type of the cluster, then takes a snapshot, and finally restores the cluster to the original snapshot
 func CreateAndValidateSnapshotRestore(client *rancher.Client, clusterName string, etcdRestore *Config, containerImage string) error {
-
 	clusterID, err := clusters.GetClusterIDByName(client, clusterName)
 	if err != nil {
 		return err
@@ -145,6 +144,7 @@ func CreateAndValidateSnapshotRestore(client *rancher.Client, clusterName string
 	if err != nil {
 		return err
 	}
+
 	return err
 }
 

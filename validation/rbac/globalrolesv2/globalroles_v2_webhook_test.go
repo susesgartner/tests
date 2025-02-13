@@ -13,14 +13,14 @@ import (
 	"github.com/rancher/shepherd/extensions/users"
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
 	"github.com/rancher/shepherd/pkg/session"
-	rbacapi "github.com/slickwarren/rancher-tests/actions/kubeapi/rbac"
+	rbacapi "github.com/rancher/tests/actions/kubeapi/rbac"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 
+	"github.com/rancher/tests/actions/rbac"
 	log "github.com/sirupsen/logrus"
-	"github.com/slickwarren/rancher-tests/actions/rbac"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )

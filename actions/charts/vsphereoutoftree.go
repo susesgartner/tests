@@ -8,14 +8,14 @@ import (
 	"github.com/rancher/shepherd/extensions/charts"
 	"github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/pkg/api/steve/catalog/types"
+	"github.com/rancher/tests/actions/projects"
+	"github.com/rancher/tests/actions/rke1/nodetemplates"
 	"github.com/sirupsen/logrus"
-	"github.com/slickwarren/rancher-tests/actions/projects"
-	"github.com/slickwarren/rancher-tests/actions/rke1/nodetemplates"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/rancher/shepherd/clients/rancher"
 	"github.com/rancher/shepherd/clients/rancher/catalog"
-	r1vsphere "github.com/slickwarren/rancher-tests/actions/rke1/nodetemplates/vsphere"
+	r1vsphere "github.com/rancher/tests/actions/rke1/nodetemplates/vsphere"
 )
 
 const (

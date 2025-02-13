@@ -17,15 +17,14 @@ import (
 	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/environmentflag"
 	"github.com/rancher/shepherd/pkg/namegenerator"
-	namegen "github.com/rancher/shepherd/pkg/namegenerator"
 	"github.com/rancher/shepherd/pkg/session"
+	"github.com/rancher/tests/actions/clusters"
+	"github.com/rancher/tests/actions/fleet"
+	"github.com/rancher/tests/actions/provisioning"
+	"github.com/rancher/tests/actions/provisioning/permutations"
+	"github.com/rancher/tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/reports"
 	"github.com/sirupsen/logrus"
-	"github.com/slickwarren/rancher-tests/actions/clusters"
-	"github.com/slickwarren/rancher-tests/actions/fleet"
-	"github.com/slickwarren/rancher-tests/actions/provisioning"
-	"github.com/slickwarren/rancher-tests/actions/provisioning/permutations"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
-	"github.com/slickwarren/rancher-tests/actions/reports"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -60,7 +59,7 @@ func (f *FleetWithProvisioningTestSuite) SetupSuite() {
 		Spec: v1alpha1.GitRepoSpec{
 			Repo:            fleet.ExampleRepo,
 			Branch:          fleet.BranchName,
-			Paths:           []string{fleet.GitRepoPathLinux},
+			Paths:           []string{"hardened"},
 			CorrectDrift:    &v1alpha1.CorrectDrift{},
 			ImageScanCommit: v1alpha1.CommitSpec{AuthorName: "", AuthorEmail: ""},
 			Targets: []v1alpha1.GitTarget{
@@ -101,7 +100,7 @@ func (f *FleetWithProvisioningTestSuite) SetupSuite() {
 	}
 
 	enabled := true
-	var testuser = namegen.AppendRandomString("testuser-")
+	var testuser = namegenerator.AppendRandomString("testuser-")
 	var testpassword = password.GenerateUserPassword("testpass-")
 	user := &management.User{
 		Username: testuser,
@@ -137,7 +136,7 @@ func (f *FleetWithProvisioningTestSuite) TestHardenedAfterAddedGitRepo() {
 		machinePools []provisioninginput.MachinePools
 		runFlag      bool
 	}{
-		{fleet.FleetName + " " + fleetVersion, f.standardUserClient, nodeRolesDedicated, f.client.Flags.GetValue(environmentflag.Long)},
+		{"PNI " + fleet.FleetName + " " + fleetVersion, f.standardUserClient, nodeRolesDedicated, f.client.Flags.GetValue(environmentflag.Long)},
 	}
 
 	for _, tt := range tests {
@@ -156,6 +155,7 @@ func (f *FleetWithProvisioningTestSuite) TestHardenedAfterAddedGitRepo() {
 
 		provisioningConfig.Hardened = true
 		provisioningConfig.MachinePools = tt.machinePools
+		provisioningConfig.PSACT = string(provisioninginput.RancherRestricted)
 
 		f.Run(tt.name, func() {
 			logrus.Info("Deploying public fleet gitRepo")
@@ -169,6 +169,7 @@ func (f *FleetWithProvisioningTestSuite) TestHardenedAfterAddedGitRepo() {
 
 			testClusterConfig.KubernetesVersion = f.provisioningConfig.RKE2KubernetesVersions[0]
 			testClusterConfig.CNI = f.provisioningConfig.CNIs[0]
+			testClusterConfig.EnableNetworkPolicy = true
 
 			clusterObject, err := provisioning.CreateProvisioningCustomCluster(tt.client, customProvider, testClusterConfig)
 			require.NoError(f.T(), err)
@@ -184,9 +185,22 @@ func (f *FleetWithProvisioningTestSuite) TestHardenedAfterAddedGitRepo() {
 
 			err = fleet.VerifyGitRepo(adminClient, gitRepoObject.ID, status.ClusterName, clusterObject.ID)
 			require.NoError(f.T(), err)
+
+			// get the updated repo object
+			gitRepoObject, err = adminClient.Steve.SteveType(extensionsfleet.FleetGitRepoResourceType).ByID(gitRepoObject.ID)
+			require.NoError(f.T(), err)
+
+			repoStatus := &v1alpha1.GitRepoStatus{}
+			err = steveV1.ConvertToK8sType(gitRepoObject.Status, repoStatus)
+			require.NoError(f.T(), err)
+
+			err = updateNamespaceWithNewProject(tt.client, status.ClusterName, repoStatus)
+			require.NoError(f.T(), err)
+
+			err = testPNI(tt.client, status.ClusterName, repoStatus.Resources[0].Namespace, repoStatus.Resources[0].Name)
+			require.NoError(f.T(), err)
 		})
 	}
-
 }
 
 func (f *FleetWithProvisioningTestSuite) TestWindowsAfterAddedGitRepo() {
@@ -239,6 +253,7 @@ func (f *FleetWithProvisioningTestSuite) TestWindowsAfterAddedGitRepo() {
 
 			testClusterConfig.KubernetesVersion = f.provisioningConfig.RKE2KubernetesVersions[0]
 			testClusterConfig.CNI = f.provisioningConfig.CNIs[0]
+			testClusterConfig.EnableNetworkPolicy = true
 
 			clusterObject, err := provisioning.CreateProvisioningCustomCluster(tt.client, customProvider, testClusterConfig)
 			require.NoError(f.T(), err)

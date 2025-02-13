@@ -11,8 +11,8 @@ import (
 	"github.com/rancher/shepherd/extensions/defaults/stevetypes"
 	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/session"
+	"github.com/rancher/tests/actions/etcdsnapshot"
 	"github.com/sirupsen/logrus"
-	"github.com/slickwarren/rancher-tests/actions/etcdsnapshot"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -106,12 +106,6 @@ func (s *SnapshotRetentionTestSuite) TestAutomaticSnapshotRetention() {
 			require.NoError(s.T(), err)
 		})
 	}
-}
-
-func (s *SnapshotRetentionTestSuite) TestAutomaticSnapshotRetentionDynamic() {
-	config := s.snapshotConfig
-	err := etcdsnapshot.CreateSnapshotsUntilRetentionLimit(s.client, config.ClusterName, config.SnapshotRetention, config.SnapshotInterval)
-	require.NoError(s.T(), err)
 }
 
 // In order for 'go test' to run this suite, we need to create

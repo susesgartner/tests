@@ -38,6 +38,6 @@ Typically, a cluster with the following 3 pools is used for testing:
 
 These tests utilize Go build tags. Due to this, see the below example on how to run the tests:
 
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/certrotation --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestCertRotation/TestCertRotation"`
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/certrotation --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestCertRotation/TestCertRotation"`
 
 If the specified test passes immediately without warning, try adding the `-count=1` flag to get around this issue. This will avoid previous results from interfering with the new test run.

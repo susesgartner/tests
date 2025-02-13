@@ -9,8 +9,8 @@ import (
 	"github.com/rancher/shepherd/clients/rancher"
 	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	"github.com/rancher/shepherd/extensions/ingresses"
-	"github.com/slickwarren/rancher-tests/actions/charts"
-	"github.com/slickwarren/rancher-tests/actions/workloads"
+	"github.com/rancher/tests/actions/charts"
+	"github.com/rancher/tests/actions/workloads"
 	appv1 "k8s.io/api/apps/v1"
 	kubewait "k8s.io/apimachinery/pkg/util/wait"
 )

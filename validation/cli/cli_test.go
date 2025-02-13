@@ -8,7 +8,7 @@ import (
 	"github.com/rancher/shepherd/clients/rancher"
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
 	"github.com/rancher/shepherd/pkg/session"
-	"github.com/slickwarren/rancher-tests/actions/cli"
+	"github.com/rancher/tests/actions/cli"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )

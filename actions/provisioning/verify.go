@@ -9,8 +9,8 @@ import (
 
 	provv1 "github.com/rancher/rancher/pkg/apis/provisioning.cattle.io/v1"
 	rkev1 "github.com/rancher/rancher/pkg/apis/rke.cattle.io/v1"
-	"github.com/slickwarren/rancher-tests/actions/clusters"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/clusters"
+	"github.com/rancher/tests/actions/provisioninginput"
 
 	"github.com/rancher/shepherd/clients/rancher"
 	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
@@ -23,11 +23,11 @@ import (
 	"github.com/rancher/shepherd/extensions/sshkeys"
 	"github.com/rancher/shepherd/extensions/workloads/pods"
 	"github.com/rancher/shepherd/pkg/wait"
+	psadeploy "github.com/rancher/tests/actions/psact"
+	"github.com/rancher/tests/actions/registries"
+	"github.com/rancher/tests/actions/reports"
 	wranglername "github.com/rancher/wrangler/pkg/name"
 	"github.com/sirupsen/logrus"
-	psadeploy "github.com/slickwarren/rancher-tests/actions/psact"
-	"github.com/slickwarren/rancher-tests/actions/registries"
-	"github.com/slickwarren/rancher-tests/actions/reports"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
@@ -60,12 +60,10 @@ func VerifyRKE1Cluster(t *testing.T, client *rancher.Client, clustersConfig *clu
 		FieldSelector:  "metadata.name=" + cluster.ID,
 		TimeoutSeconds: &defaults.WatchTimeoutSeconds,
 	})
-	reports.TimeoutRKEReport(cluster, err)
 	require.NoError(t, err)
 
 	checkFunc := shepherdclusters.IsHostedProvisioningClusterReady
 	err = wait.WatchWait(watchInterface, checkFunc)
-	reports.TimeoutRKEReport(cluster, err)
 	require.NoError(t, err)
 
 	assert.Equal(t, clustersConfig.KubernetesVersion, cluster.RancherKubernetesEngineConfig.Version)

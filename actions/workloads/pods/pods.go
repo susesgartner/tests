@@ -13,7 +13,7 @@ import (
 	"github.com/rancher/shepherd/extensions/kubeconfig"
 	"github.com/rancher/shepherd/extensions/workloads"
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
-	"github.com/slickwarren/rancher-tests/actions/kubeapi/workloads/deployments"
+	"github.com/rancher/tests/actions/kubeapi/workloads/deployments"
 	appv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

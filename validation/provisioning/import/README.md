@@ -48,7 +48,7 @@ corralConfigs:
         node_count: 3
         server_count: 3
 
-    corralSSHPath: "/root/go/src/github.com/slickwarren/rancher-tests/validation/.ssh/<your_ssh_key>"
+    corralSSHPath: "/root/go/src/github.com/rancher/tests/validation/.ssh/<your_ssh_key>"
 corralPackages:
     corralPackageImages:
         # NOTE: k3sToImport is the **Required** package name. It can point to any path, as long as the package name is k3sToImport.
