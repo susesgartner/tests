@@ -6,11 +6,9 @@ import (
 	"testing"
 
 	apisV1 "github.com/rancher/rancher/pkg/apis/provisioning.cattle.io/v1"
-	"github.com/rancher/tests/validation/pipeline/rancherha/corralha"
-	"github.com/ragithub.com/rancher/tests/actionsies"
-	"github.com/rancher/tests/actions
-	"github.com/rancher/tests/actions"
-	mgithub.com/rancher/tests/actionsnts/rancher/generated/management/v3"
+	"github.com/rancher/shepherd/clients/corral"
+	"github.com/rancher/shepherd/clients/rancher"
+	"github.com/rancher/shepherd/clients/rancher/generated/management/v3"
 	steveV1 "github.com/rancher/shepherd/clients/rancher/v1"
 	extensionscluster "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/clusters/kubernetesversions"
@@ -24,6 +22,8 @@ import (
 	"github.com/rancher/tests/actions/provisioning/permutations"
 	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/rancher/tests/actions/reports"
+	"github.com/rancher/tests/validation/pipeline/rancherha/corralha"
+	"github.com/rancher/tests/validation/provisioning/registries"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"

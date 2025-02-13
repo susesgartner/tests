@@ -6,8 +6,7 @@ import (
 	"testing"
 
 	rkev1 "github.com/rancher/rancher/pkg/apis/rke.cattle.io/v1"
-	"github.com/rancher/tests/validation/pipeline/rancherha/corralha"
-	"github.com/rancher/tests/actions
+	"github.com/rancher/shepherd/clients/corral"
 	"github.com/rancher/shepherd/clients/rancher"
 	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
 	"github.com/rancher/shepherd/extensions/clusters"
@@ -20,6 +19,7 @@ import (
 	"github.com/rancher/shepherd/pkg/session"
 	"github.com/rancher/tests/actions/provisioning/permutations"
 	"github.com/rancher/tests/actions/provisioninginput"
+	"github.com/rancher/tests/validation/pipeline/rancherha/corralha"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
