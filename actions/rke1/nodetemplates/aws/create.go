@@ -6,7 +6,7 @@ import (
 	"github.com/rancher/shepherd/extensions/cloudcredentials"
 	"github.com/rancher/shepherd/extensions/cloudcredentials/aws"
 	"github.com/rancher/shepherd/pkg/config"
-	"github.com/slickwarren/rancher-tests/actions/rke1/nodetemplates"
+	"github.com/rancher/tests/actions/rke1/nodetemplates"
 )
 
 const awsEC2NodeTemplateNameBase = "awsNodeConfig"

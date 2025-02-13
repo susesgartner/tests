@@ -6,22 +6,22 @@ import (
 	"testing"
 
 	"github.com/rancher/shepherd/clients/rancher"
-	"github.com/rancher/shepherd/clients/rancher/catalog"
-	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
-	extensionscluster "github.com/rancher/shepherd/extensions/clusters"
-	"github.com/rancher/shepherd/extensions/clusters/kubernetesversions"
 	"github.com/rancher/shepherd/extensions/users"
 	password "github.com/rancher/shepherd/extensions/users/passwordgenerator"
 	"github.com/rancher/shepherd/pkg/config"
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
 	"github.com/rancher/shepherd/pkg/session"
-	"github.com/slickwarren/rancher-tests/actions/charts"
-	"github.com/slickwarren/rancher-tests/actions/clusters"
-	"github.com/slickwarren/rancher-tests/actions/projects"
-	"github.com/slickwarren/rancher-tests/actions/provisioning"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
-	"github.com/slickwarren/rancher-tests/actions/reports"
-	cis "github.com/slickwarren/rancher-tests/validation/provisioning/resources/cisbenchmark"
+	"github.com/rancher/tests/actions/catalog"
+	"github.com/rancher/tests/actions/charts"
+	"github.com/rancher/tests/actions/clusters"
+	"github.com/rancher/tests/actions/projects"
+	"github.com/rancher/tests/actions/provisioning"
+	"github.com/rancher/tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/reports"
+	"github.com/rancher/tests/actionsnts/rancher/generated/management/v3"
+	"github.com/rancher/tests/actionsrd/extensions/clusters"
+	"github.com/rancher/tests/actionsters/kubernetesversions"
+	cis "github.com/rancher/tests/validation/provisioning/resources/cisbenchmark"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -54,6 +54,11 @@ func (c *HardenedRKE2ClusterProvisioningTestSuite) SetupSuite() {
 	c.client = client
 
 	if c.provisioningConfig.RKE2KubernetesVersions == nil {
+		rke2Versions, err := kubernetesversions.Default(c.client, extensionscluster.RKE2ClusterType.String(), nil)
+		require.NoError(c.T(), err)
+
+		c.provisioningConfig.RKE2KubernetesVersions = rke2Versions
+	} else if c.provisioningConfig.RKE2KubernetesVersions[0] == "all" {
 		rke2Versions, err := kubernetesversions.ListRKE2AllVersions(c.client)
 		require.NoError(c.T(), err)
 

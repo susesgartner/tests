@@ -7,6 +7,7 @@ import (
 
 	"github.com/rancher/shepherd/clients/rancher"
 	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
+	"github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/clusters/kubernetesversions"
 	"github.com/rancher/shepherd/extensions/users"
 	password "github.com/rancher/shepherd/extensions/users/passwordgenerator"
@@ -14,8 +15,8 @@ import (
 	"github.com/rancher/shepherd/pkg/environmentflag"
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
 	"github.com/rancher/shepherd/pkg/session"
-	"github.com/slickwarren/rancher-tests/actions/provisioning/permutations"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/provisioning/permutations"
+	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -45,6 +46,11 @@ func (c *CustomClusterProvisioningTestSuite) SetupSuite() {
 	c.client = client
 
 	if c.provisioningConfig.K3SKubernetesVersions == nil {
+		k3sVersions, err := kubernetesversions.Default(c.client, clusters.K3SClusterType.String(), nil)
+		require.NoError(c.T(), err)
+
+		c.provisioningConfig.K3SKubernetesVersions = k3sVersions
+	} else if c.provisioningConfig.K3SKubernetesVersions[0] == "all" {
 		k3sVersions, err := kubernetesversions.ListK3SAllVersions(c.client)
 		require.NoError(c.T(), err)
 

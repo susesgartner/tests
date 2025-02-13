@@ -7,7 +7,7 @@ import (
 	"github.com/rancher/shepherd/clients/rancher"
 	"github.com/rancher/shepherd/extensions/unstructured"
 	"github.com/rancher/shepherd/pkg/api/scheme"
-	"github.com/slickwarren/rancher-tests/actions/kubeapi/volumes/persistentvolumes"
+	"github.com/rancher/tests/actions/kubeapi/volumes/persistentvolumes"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

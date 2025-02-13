@@ -8,10 +8,10 @@ import (
 	"github.com/rancher/shepherd/extensions/clusters/aks"
 	"github.com/rancher/shepherd/extensions/clusters/eks"
 	"github.com/rancher/shepherd/extensions/clusters/gke"
-	"github.com/slickwarren/rancher-tests/actions/machinepools"
-	"github.com/slickwarren/rancher-tests/actions/provisioning"
-	rke1 "github.com/slickwarren/rancher-tests/actions/rke1/nodepools"
-	"github.com/slickwarren/rancher-tests/actions/workloads/pods"
+	"github.com/rancher/tests/actions/machinepools"
+	"github.com/rancher/tests/actions/provisioning"
+	rke1 "github.com/rancher/tests/actions/rke1/nodepools"
+	"github.com/rancher/tests/actions/workloads/pods"
 	"github.com/stretchr/testify/require"
 )
 

@@ -25,8 +25,8 @@ Note: To see the `provisioningInput` in further detail, please review over the [
 See below how to run the test:
 
 ### Kubernetes Upgrade
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/upgrade --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestKubernetesUpgradeTestSuite/TestUpgradeKubernetes"` \
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/upgrade --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestWindowsKubernetesUpgradeTestSuite/TestUpgradeWindowsKubernetes"`
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/upgrade --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestKubernetesUpgradeTestSuite/TestUpgradeKubernetes"` \
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/upgrade --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestWindowsKubernetesUpgradeTestSuite/TestUpgradeWindowsKubernetes"`
 
 ## Cloud Provider Migration
 Migrates a cluster's cloud provider from in-tree to out-of-tree
@@ -52,7 +52,7 @@ rancher:
 
 **note** that no `upgradeInput` is required. See below how to run each of the tests:
 
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/upgrade --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestCloudProviderMigrationTestSuite/TestAWS"`
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/upgrade --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestCloudProviderMigrationTestSuite/TestAWS"`
 
 
 ## Cloud Provider Upgrade
@@ -84,4 +84,4 @@ vmwarevsphereConfig:
 ```
 See below how to run each of the tests:
 
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/upgrade --junitfile results.xml -- -timeout=60m -tags=validation -v -run ^TestCloudProviderVersionUpgradeSuite$"`
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/upgrade --junitfile results.xml -- -timeout=60m -tags=validation -v -run ^TestCloudProviderVersionUpgradeSuite$"`

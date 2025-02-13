@@ -1,3 +1,5 @@
+//go:build (validation || infra.rke1 || cluster.nodedriver || stress) && !infra.any && !infra.aks && !infra.eks && !infra.gke && !infra.rke2k3s && !cluster.any && !sanity
+
 package rbac
 
 import (
@@ -9,10 +11,10 @@ import (
 	"github.com/rancher/shepherd/extensions/settings"
 	"github.com/rancher/shepherd/extensions/users"
 	"github.com/rancher/shepherd/pkg/config"
-	"github.com/slickwarren/rancher-tests/actions/clusters"
-	"github.com/slickwarren/rancher-tests/actions/clustertemplates"
-	"github.com/slickwarren/rancher-tests/actions/provisioning"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/clusters"
+	"github.com/rancher/tests/actions/clustertemplates"
+	"github.com/rancher/tests/actions/provisioning"
+	"github.com/rancher/tests/actions/provisioninginput"
 
 	"github.com/rancher/shepherd/pkg/session"
 	log "github.com/sirupsen/logrus"
@@ -57,7 +59,6 @@ func (ct *ClusterTemplateRKE1RBACTestSuite) SetupSuite() {
 	if ct.provisioningConfig.CNIs == nil {
 		ct.provisioningConfig.CNIs = []string{clustertemplates.CniCalico}
 	}
-
 }
 
 func (ct *ClusterTemplateRKE1RBACTestSuite) TestClusterTemplateEnforcementForStandardUser() {

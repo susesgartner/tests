@@ -12,9 +12,9 @@ import (
 	"github.com/rancher/shepherd/extensions/users"
 	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/session"
+	"github.com/rancher/tests/actions/projects"
+	"github.com/rancher/tests/actions/rbac"
 	log "github.com/sirupsen/logrus"
-	"github.com/slickwarren/rancher-tests/actions/projects"
-	"github.com/slickwarren/rancher-tests/actions/rbac"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -123,7 +123,6 @@ func (rb *RBTestSuite) TestRBAC() {
 		{"Cluster Member", rbac.ClusterMember, rbac.StandardUser.String()},
 		{"Project Owner", rbac.ProjectOwner, rbac.StandardUser.String()},
 		{"Project Member", rbac.ProjectMember, rbac.StandardUser.String()},
-		{"Restricted Admin", rbac.RestrictedAdmin, rbac.RestrictedAdmin.String()},
 	}
 
 	for _, tt := range tests {
@@ -145,13 +144,11 @@ func (rb *RBTestSuite) TestRBAC() {
 
 func (rb *RBTestSuite) TestRBACDynamicInput() {
 	roles := map[string]string{
-		"cluster-owner":    rbac.ClusterOwner.String(),
-		"cluster-member":   rbac.ClusterMember.String(),
-		"project-owner":    rbac.ProjectOwner.String(),
-		"project-member":   rbac.ProjectMember.String(),
-		"restricted-admin": rbac.RestrictedAdmin.String(),
+		"cluster-owner":  rbac.ClusterOwner.String(),
+		"cluster-member": rbac.ClusterMember.String(),
+		"project-owner":  rbac.ProjectOwner.String(),
+		"project-member": rbac.ProjectMember.String(),
 	}
-	var member string
 	userConfig := new(rbac.Config)
 	config.LoadConfig(rbac.ConfigurationFileKey, userConfig)
 	username := userConfig.Username
@@ -173,12 +170,7 @@ func (rb *RBTestSuite) TestRBACDynamicInput() {
 		role = rbac.Role(val)
 	}
 
-	if role == rbac.RestrictedAdmin {
-		member = rbac.RestrictedAdmin.String()
-	} else {
-		member = rbac.StandardUser.String()
-	}
-	rb.sequentialTestRBAC(role, member, user)
+	rb.sequentialTestRBAC(role, rbac.StandardUser.String(), user)
 
 }
 

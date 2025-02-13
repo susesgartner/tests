@@ -14,8 +14,8 @@ import (
 	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/file"
 	"github.com/rancher/shepherd/pkg/session"
+	"github.com/rancher/tests/actions/pipeline"
 	"github.com/sirupsen/logrus"
-	"github.com/slickwarren/rancher-tests/actions/pipeline"
 	"gopkg.in/yaml.v2"
 	kwait "k8s.io/apimachinery/pkg/util/wait"
 )

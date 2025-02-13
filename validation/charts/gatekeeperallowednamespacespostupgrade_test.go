@@ -7,7 +7,7 @@ import (
 
 	settings "github.com/rancher/rancher/pkg/settings"
 	"github.com/rancher/shepherd/pkg/environmentflag"
-	namespaces "github.com/slickwarren/rancher-tests/actions/namespaces"
+	namespaces "github.com/rancher/tests/actions/namespaces"
 	"github.com/stretchr/testify/require"
 )
 

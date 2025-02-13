@@ -9,9 +9,9 @@ import (
 	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/environmentflag"
 	"github.com/rancher/shepherd/pkg/session"
+	"github.com/rancher/tests/actions/pipeline"
+	"github.com/rancher/tests/validation/pipeline/rancherha/corralha"
 	"github.com/sirupsen/logrus"
-	"github.com/slickwarren/rancher-tests/actions/pipeline"
-	"github.com/slickwarren/rancher-tests/validation/pipeline/rancherha/corralha"
 )
 
 const rke1 = "rke1"

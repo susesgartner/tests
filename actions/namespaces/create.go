@@ -12,7 +12,7 @@ import (
 	"github.com/rancher/shepherd/extensions/defaults"
 	"github.com/rancher/shepherd/pkg/api/scheme"
 	"github.com/rancher/shepherd/pkg/wait"
-	"github.com/slickwarren/rancher-tests/actions/kubeapi/namespaces"
+	"github.com/rancher/tests/actions/kubeapi/namespaces"
 	coreV1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"

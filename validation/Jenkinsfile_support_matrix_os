@@ -1,6 +1,6 @@
 #!groovy
 node {
-    def rootPath = "/go/src/github.com/slickwarren/rancher-tests/validation/"
+    def rootPath = "/go/src/github.com/rancher/tests/validation/"
     def job_name = "${JOB_NAME}"
     if (job_name.contains('/')) { 
       job_names = job_name.split('/')
@@ -8,7 +8,7 @@ node {
     }
     def testContainer = "${job_name}${env.BUILD_NUMBER}_test"
     def imageName = "rancher-validation-${job_name}${env.BUILD_NUMBER}"
-    def testsDir = "github.com/slickwarren/rancher-tests/validation/${env.TEST_PACKAGE}"
+    def testsDir = "github.com/rancher/tests/validation/${env.TEST_PACKAGE}"
     def testResultsOut = "results.xml"
     def envFile = ".env"
     def rancherConfig = "rancher_env.config"
@@ -92,17 +92,17 @@ node {
           dir ("./") {
               stage('Configure and Build') {
                 if (env.AWS_SSH_PEM_KEY && env.AWS_SSH_KEY_NAME) {
-                  dir("./validation/.ssh") {
+                  dir("./tests/v2/validation/.ssh") {
                     def decoded = new String(AWS_SSH_PEM_KEY.decodeBase64())
                     writeFile file: AWS_SSH_KEY_NAME, text: decoded
                   }
                 }
 
-                sh "./validation/configure.sh"
+                sh "./tests/v2/validation/configure.sh"
 
               }
               stage('Run Jobs') {
-                dir("./validation/") {
+                dir("./tests/v2/validation/") {
                   // install yq
                   sh returnStdout: true, script: 'wget -qO ./yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64'
                   sh returnStdout: true, script: 'chmod a+x ./yq'

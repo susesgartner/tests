@@ -1,4 +1,4 @@
-//go:build validation
+//go:build validation || sanity
 
 package fleet
 
@@ -17,9 +17,9 @@ import (
 	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/namegenerator"
 	"github.com/rancher/shepherd/pkg/session"
+	"github.com/rancher/tests/actions/fleet"
+	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/sirupsen/logrus"
-	"github.com/slickwarren/rancher-tests/actions/fleet"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

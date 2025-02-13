@@ -17,9 +17,9 @@ import (
 	"github.com/rancher/shepherd/pkg/environmentflag"
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
 	"github.com/rancher/shepherd/pkg/session"
-	"github.com/slickwarren/rancher-tests/actions/provisioning/permutations"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
-	"github.com/slickwarren/rancher-tests/validation/pipeline/rancherha/corralha"
+	"github.com/rancher/tests/actions/provisioning/permutations"
+	"github.com/rancher/tests/actions/provisioninginput"
+	"github.com/rancher/tests/validation/pipeline/rancherha/corralha"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -135,5 +135,6 @@ func (k *ProxyK3SCustomClusterTestSuite) TestProxyK3SCustomClusterProvisioning()
 }
 
 func TestProxyK3SCustomClusterTestSuite(t *testing.T) {
+	t.Skip("This test has been deprecated; check https://github.com/rancher/tfp-automation for updated tests")
 	suite.Run(t, new(ProxyK3SCustomClusterTestSuite))
 }

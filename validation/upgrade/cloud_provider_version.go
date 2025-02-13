@@ -7,10 +7,10 @@ import (
 	"github.com/rancher/shepherd/clients/rancher/catalog"
 	"github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/workloads/pods"
+	"github.com/rancher/tests/actions/charts"
+	"github.com/rancher/tests/actions/provisioning/permutations"
+	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/sirupsen/logrus"
-	"github.com/slickwarren/rancher-tests/actions/charts"
-	"github.com/slickwarren/rancher-tests/actions/provisioning/permutations"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
 	"github.com/stretchr/testify/require"
 )
 

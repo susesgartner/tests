@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/slickwarren/rancher-tests/validation/charts/resources"
+	"github.com/rancher/tests/validation/charts/resources"
 	"gopkg.in/yaml.v2"
 
 	"github.com/pkg/errors"
@@ -20,9 +20,9 @@ import (
 	"github.com/rancher/shepherd/extensions/ingresses"
 	wloads "github.com/rancher/shepherd/extensions/workloads"
 	"github.com/rancher/shepherd/pkg/namegenerator"
-	"github.com/slickwarren/rancher-tests/actions/charts"
-	"github.com/slickwarren/rancher-tests/actions/serviceaccounts"
-	"github.com/slickwarren/rancher-tests/actions/workloads"
+	"github.com/rancher/tests/actions/charts"
+	"github.com/rancher/tests/actions/serviceaccounts"
+	"github.com/rancher/tests/actions/workloads"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -267,6 +267,8 @@ func createPrometheusRule(client *rancher.Client, clusterID string) error {
 		return err
 	}
 
+	zeroDuration := monitoringv1.Duration("0s")
+
 	prometheusRule := &monitoringv1.PrometheusRule{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      ruleName,
@@ -281,7 +283,7 @@ func createPrometheusRule(client *rancher.Client, clusterID string) error {
 							Alert:  alertName,
 							Expr:   intstr.IntOrString{Type: intstr.String, StrVal: "vector(0)"},
 							Labels: ruleLabel,
-							For:    "0s",
+							For:    &zeroDuration,
 						},
 					},
 				},

@@ -245,8 +245,8 @@ vmwarevsphereMachineConfigs:
 
 These tests utilize Go build tags. Due to this, see the below examples on how to run the node driver tests:
 
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/provisioning/k3s --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestK3SProvisioningTestSuite/TestProvisioningK3SCluster"` \
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/provisioning/k3s --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestK3SProvisioningTestSuite/TestProvisioningK3SClusterDynamicInput"`
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/provisioning/k3s --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestK3SProvisioningTestSuite/TestProvisioningK3SCluster"` \
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/provisioning/k3s --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestK3SProvisioningTestSuite/TestProvisioningK3SClusterDynamicInput"`
 
 If the specified test passes immediately without warning, try adding the `-count=1` flag to get around this issue. This will avoid previous results from interfering with the new test run.
 
@@ -295,8 +295,8 @@ Dependencies:
 
 These tests utilize Go build tags. Due to this, see the below examples on how to run the custom cluster tests:
 
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/provisioning/k3s --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestCustomClusterK3SProvisioningTestSuite/TestProvisioningK3SCustomCluster"` \
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/provisioning/k3s --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestCustomClusterK3SProvisioningTestSuite/TestProvisioningK3SCustomClusterDynamicInput"`
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/provisioning/k3s --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestCustomClusterK3SProvisioningTestSuite/TestProvisioningK3SCustomCluster"` \
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/provisioning/k3s --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestCustomClusterK3SProvisioningTestSuite/TestProvisioningK3SCustomClusterDynamicInput"`
 
 If the specified test passes immediately without warning, try adding the `-count=1` flag to get around this issue. This will avoid previous results from interfering with the new test run.
 
@@ -318,7 +318,7 @@ templateTest:
   templateName: "cluster-template"
 ```
 
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/provisioning/rke2 --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestClusterTemplateTestSuite/TestProvisionK3sTemplateCluster`
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/provisioning/rke2 --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestClusterTemplateTestSuite/TestProvisionK3sTemplateCluster`
 
 ## Static Test Cases
 In an effort to have uniform testing across our internal QA test case reporter, there are specific test cases that are put into their respective test files. This section highlights those test cases.
@@ -367,7 +367,7 @@ linodeMachineConfigs:
 
 These tests utilize Go build tags. Due to this, see the below examples on how to run the tests:
 
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/provisioning/k3s --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestK3SPSACTTestSuite$"`
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/provisioning/k3s --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestK3SPSACTTestSuite$"`
 
 ### Hardened Custom Cluster
 This will provision a hardened custom cluster that runs across the following CIS scan profiles:
@@ -378,7 +378,7 @@ You would use the same config that you setup for a custom cluster to run this te
 
 These tests utilize Go build tags. Due to this, see the below examples on how to run the tests:
 
-`gotestsum --format standard-verbose --packages=github.com/slickwarren/rancher-tests/validation/provisioning/k3s --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestHardenedK3SClusterProvisioningTestSuite$"`
+`gotestsum --format standard-verbose --packages=github.com/rancher/tests/validation/provisioning/k3s --junitfile results.xml -- -timeout=60m -tags=validation -v -run "TestHardenedK3SClusterProvisioningTestSuite$"`
 
 ## Advanced Settings
 This encapsulates any other setting that is applied in the cluster.spec. Currently we have support for:

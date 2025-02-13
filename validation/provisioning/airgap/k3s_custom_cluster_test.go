@@ -8,7 +8,6 @@ import (
 	apisV1 "github.com/rancher/rancher/pkg/apis/provisioning.cattle.io/v1"
 	"github.com/rancher/shepherd/clients/corral"
 	"github.com/rancher/shepherd/clients/rancher"
-	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
 	steveV1 "github.com/rancher/shepherd/clients/rancher/v1"
 	extensionscluster "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/clusters/kubernetesversions"
@@ -17,25 +16,27 @@ import (
 	"github.com/rancher/shepherd/pkg/config"
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
 	"github.com/rancher/shepherd/pkg/session"
+	"github.com/rancher/tests/actions/clusters"
+	provisioning "github.com/rancher/tests/actions/provisioning"
+	"github.com/rancher/tests/actions/provisioning/permutations"
+	"github.com/rancher/tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/reports"
+	"github.com/rancher/tests/actionsnts/rancher/generated/management/v3"
+	"github.com/rancher/tests/validation/pipeline/rancherha/corralha"
+	"github.com/rancher/tests/validation/provisioning/registries"
 	"github.com/sirupsen/logrus"
-	"github.com/slickwarren/rancher-tests/actions/clusters"
-	provisioning "github.com/slickwarren/rancher-tests/actions/provisioning"
-	"github.com/slickwarren/rancher-tests/actions/provisioning/permutations"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
-	"github.com/slickwarren/rancher-tests/actions/reports"
-	"github.com/slickwarren/rancher-tests/validation/pipeline/rancherha/corralha"
-	"github.com/slickwarren/rancher-tests/validation/provisioning/registries"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
 type AirGapK3SCustomClusterTestSuite struct {
 	suite.Suite
-	client         *rancher.Client
-	session        *session.Session
-	corralPackage  *corral.Packages
-	clustersConfig *provisioninginput.Config
-	registryFQDN   string
+	client             *rancher.Client
+	standardUserClient *rancher.Client
+	session            *session.Session
+	corralPackage      *corral.Packages
+	clustersConfig     *provisioninginput.Config
+	registryFQDN       string
 }
 
 func (a *AirGapK3SCustomClusterTestSuite) TearDownSuite() {
@@ -101,6 +102,7 @@ func (a *AirGapK3SCustomClusterTestSuite) SetupSuite() {
 
 		err = corral.SetCorralSSHKeys(corralRancherHA.Name)
 		require.NoError(a.T(), err)
+
 		a.registryFQDN = registryFQDN
 	} else {
 		a.registryFQDN = registriesConfig.ExistingNoAuthRegistryURL
@@ -117,12 +119,11 @@ func (a *AirGapK3SCustomClusterTestSuite) TestProvisioningAirGapK3SCustomCluster
 		client      *rancher.Client
 		machinePool []provisioninginput.MachinePools
 	}{
-		{"1 Node All Roles " + provisioninginput.StandardClientName.String() + "-" + permutations.K3SAirgapCluster + "-", a.client, nodeRolesAll},
-		{"2 nodes - etcd|cp roles per 1 node " + provisioninginput.StandardClientName.String() + "-" + permutations.K3SAirgapCluster + "-", a.client, nodeRolesShared},
-		{"3 nodes - 1 role per node " + provisioninginput.StandardClientName.String() + "-" + permutations.K3SAirgapCluster + "-", a.client, nodeRolesDedicated},
+		{"1 Node all Roles " + provisioninginput.StandardClientName.String(), a.standardUserClient, nodeRolesAll},
+		{"2 nodes - etcd|cp roles per 1 node " + provisioninginput.StandardClientName.String(), a.standardUserClient, nodeRolesShared},
+		{"3 nodes - 1 role per node " + provisioninginput.StandardClientName.String(), a.standardUserClient, nodeRolesDedicated},
 	}
 	for _, tt := range tests {
-
 		a.clustersConfig.MachinePools = tt.machinePool
 
 		if a.clustersConfig.K3SKubernetesVersions == nil {
@@ -134,7 +135,6 @@ func (a *AirGapK3SCustomClusterTestSuite) TestProvisioningAirGapK3SCustomCluster
 
 		permutations.RunTestPermutations(&a.Suite, tt.name, tt.client, a.clustersConfig, permutations.K3SAirgapCluster, nil, a.corralPackage)
 	}
-
 }
 
 func (a *AirGapK3SCustomClusterTestSuite) TestProvisioningUpgradeAirGapK3SCustomCluster() {
@@ -147,13 +147,12 @@ func (a *AirGapK3SCustomClusterTestSuite) TestProvisioningUpgradeAirGapK3SCustom
 		client      *rancher.Client
 		machinePool []provisioninginput.MachinePools
 	}{
-		{"1 Node All Roles " + provisioninginput.StandardClientName.String() + "-" + permutations.K3SAirgapCluster + "-", a.client, nodeRolesAll},
-		{"2 nodes - etcd|cp roles per 1 node " + provisioninginput.StandardClientName.String() + "-" + permutations.K3SAirgapCluster + "-", a.client, nodeRolesShared},
-		{"3 nodes - 1 role per node " + provisioninginput.StandardClientName.String() + "-" + permutations.K3SAirgapCluster + "-", a.client, nodeRolesDedicated},
+		{"Upgrading 1 node all Roles " + provisioninginput.StandardClientName.String(), a.standardUserClient, nodeRolesAll},
+		{"Upgrading 2 nodes - etcd|cp roles per 1 node " + provisioninginput.StandardClientName.String(), a.standardUserClient, nodeRolesShared},
+		{"Upgrading 3 nodes - 1 role per node " + provisioninginput.StandardClientName.String(), a.standardUserClient, nodeRolesDedicated},
 	}
 
 	for _, tt := range tests {
-
 		a.clustersConfig.MachinePools = tt.machinePool
 		k3sVersions, err := kubernetesversions.ListK3SAllVersions(a.client)
 		require.NoError(a.T(), err)
@@ -163,6 +162,7 @@ func (a *AirGapK3SCustomClusterTestSuite) TestProvisioningUpgradeAirGapK3SCustom
 		if a.clustersConfig.K3SKubernetesVersions != nil {
 			k3sVersions = a.clustersConfig.K3SKubernetesVersions
 		}
+
 		numOfK3SVersions := len(k3sVersions)
 
 		testConfig := clusters.ConvertConfigToClusterConfig(a.clustersConfig)
@@ -171,6 +171,7 @@ func (a *AirGapK3SCustomClusterTestSuite) TestProvisioningUpgradeAirGapK3SCustom
 
 		versionToUpgrade := k3sVersions[numOfK3SVersions-1]
 		tt.name += testConfig.KubernetesVersion + " to " + versionToUpgrade
+
 		a.Run(tt.name, func() {
 			clusterObject, err := provisioning.CreateProvisioningAirgapCustomCluster(a.client, testConfig, a.corralPackage)
 			require.NoError(a.T(), err)
@@ -201,5 +202,6 @@ func (a *AirGapK3SCustomClusterTestSuite) TestProvisioningUpgradeAirGapK3SCustom
 // In order for 'go test' to run this suite, we need to create
 // a normal test function and pass our suite to suite.Run
 func TestAirGapCustomClusterK3SProvisioningTestSuite(t *testing.T) {
+	t.Skip("This test has been deprecated; check https://github.com/rancher/tfp-automation for updated tests")
 	suite.Run(t, new(AirGapK3SCustomClusterTestSuite))
 }

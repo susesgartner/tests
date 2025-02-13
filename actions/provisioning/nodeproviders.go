@@ -6,7 +6,7 @@ import (
 	"github.com/rancher/shepherd/clients/rancher"
 	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/nodes"
-	"github.com/slickwarren/rancher-tests/actions/nodes/ec2"
+	"github.com/rancher/tests/actions/nodes/ec2"
 )
 
 const (

@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/rancher/norman/httperror"
-	"github.com/slickwarren/rancher-tests/validation/pipeline/qase/testcase"
+	"github.com/rancher/tests/validation/pipeline/qase/testcase"
 )
 
 var (

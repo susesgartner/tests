@@ -77,7 +77,7 @@ func PostRKE1HardeningConfig(nodes []*nodes.Node, nodeRoles []string) error {
 				return nil
 			}
 
-			dirPath := filepath.Join(user.HomeDir, "go/src/github.com/slickwarren/rancher-tests/actions/hardening/rke1")
+			dirPath := filepath.Join(user.HomeDir, "go/src/github.com/rancher/tests/actions/hardening/rke1")
 			err = node.SCPFileToNode(dirPath+"/account-update.yaml", "/home/"+node.SSHUser+"/account-update.yaml")
 			if err != nil {
 				return err

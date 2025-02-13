@@ -12,7 +12,7 @@ import (
 	"github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/session"
-	"github.com/slickwarren/rancher-tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -59,9 +59,7 @@ func (r *V2ProvCertRotationTestSuite) TestCertRotation() {
 			require.NoError(r.T(), rotateRKE1Certs(r.client, r.client.RancherConfig.ClusterName))
 			require.NoError(r.T(), rotateRKE1Certs(r.client, r.client.RancherConfig.ClusterName))
 		})
-
 	} else {
-
 		if strings.Contains(spec.KubernetesVersion, "k3s") {
 			clusterType = "K3s"
 		} else {
@@ -73,7 +71,6 @@ func (r *V2ProvCertRotationTestSuite) TestCertRotation() {
 			require.NoError(r.T(), rotateCerts(r.client, r.client.RancherConfig.ClusterName))
 		})
 	}
-
 }
 
 func TestCertRotationTestSuite(t *testing.T) {

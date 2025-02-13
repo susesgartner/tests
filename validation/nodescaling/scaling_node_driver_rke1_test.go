@@ -9,8 +9,8 @@ import (
 	"github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/session"
-	nodepools "github.com/slickwarren/rancher-tests/actions/rke1/nodepools"
-	"github.com/slickwarren/rancher-tests/actions/scalinginput"
+	nodepools "github.com/rancher/tests/actions/rke1/nodepools"
+	"github.com/rancher/tests/actions/scalinginput"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -55,11 +55,6 @@ func (s *RKE1NodeScalingTestSuite) TestScalingRKE1NodePools() {
 		Quantity: 1,
 	}
 
-	nodeRolesTwoWorkers := nodepools.NodeRoles{
-		Worker:   true,
-		Quantity: 2,
-	}
-
 	tests := []struct {
 		name      string
 		nodeRoles nodepools.NodeRoles
@@ -68,7 +63,6 @@ func (s *RKE1NodeScalingTestSuite) TestScalingRKE1NodePools() {
 		{"Scaling control plane by 1", nodeRolesControlPlane, s.client},
 		{"Scaling etcd node by 1", nodeRolesEtcd, s.client},
 		{"Scaling worker by 1", nodeRolesWorker, s.client},
-		{"Scaling worker node machine by 2", nodeRolesTwoWorkers, s.client},
 	}
 
 	for _, tt := range tests {

@@ -6,7 +6,7 @@ import (
 	"github.com/rancher/shepherd/extensions/cloudcredentials"
 	"github.com/rancher/shepherd/extensions/cloudcredentials/harvester"
 	"github.com/rancher/shepherd/pkg/config"
-	"github.com/slickwarren/rancher-tests/actions/rke1/nodetemplates"
+	"github.com/rancher/tests/actions/rke1/nodetemplates"
 )
 
 const harvesterNodeTemplateNameBase = "harvesterNodeConfig"

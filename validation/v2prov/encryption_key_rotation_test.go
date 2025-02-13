@@ -21,7 +21,7 @@ import (
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
 	"github.com/rancher/shepherd/pkg/session"
 	"github.com/rancher/shepherd/pkg/wait"
-	"github.com/slickwarren/rancher-tests/actions/kubeapi/secrets"
+	"github.com/rancher/tests/actions/kubeapi/secrets"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	corev1 "k8s.io/api/core/v1"

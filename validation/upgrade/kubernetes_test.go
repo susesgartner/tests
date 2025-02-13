@@ -7,8 +7,8 @@ import (
 
 	"github.com/rancher/shepherd/clients/rancher"
 	"github.com/rancher/shepherd/pkg/session"
-	"github.com/slickwarren/rancher-tests/actions/clusters"
-	"github.com/slickwarren/rancher-tests/actions/upgradeinput"
+	"github.com/rancher/tests/actions/clusters"
+	"github.com/rancher/tests/actions/upgradeinput"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -52,7 +52,7 @@ func (u *UpgradeKubernetesTestSuite) TestUpgradeKubernetes() {
 			testConfig := clusters.ConvertConfigToClusterConfig(&cluster.ProvisioningInput)
 
 			if cluster.Name == local {
-				upgradeLocalCluster(&u.Suite, tt.name, tt.client, cluster.Name, testConfig, cluster, containerImage)
+				upgradeLocalCluster(&u.Suite, tt.name, tt.client, testConfig, cluster, containerImage)
 			} else {
 				upgradeDownstreamCluster(&u.Suite, tt.name, tt.client, cluster.Name, testConfig, cluster, nil, containerImage)
 			}

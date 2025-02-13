@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/rancher/shepherd/clients/rancher"
-	"github.com/slickwarren/rancher-tests/actions/etcdsnapshot"
+	"github.com/rancher/tests/actions/etcdsnapshot"
 
 	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/session"
@@ -68,15 +68,6 @@ func (s *SnapshotRestoreWindowsTestSuite) TestSnapshotRestoreWindows() {
 			require.NoError(s.T(), err)
 		})
 	}
-}
-
-func (s *SnapshotRestoreWindowsTestSuite) TestSnapshotRestoreWindowsDynamicInput() {
-	if s.clustersConfig == nil {
-		s.T().Skip()
-	}
-
-	err := etcdsnapshot.CreateAndValidateSnapshotRestore(s.client, s.client.RancherConfig.ClusterName, s.clustersConfig, windowsContainerImage)
-	require.NoError(s.T(), err)
 }
 
 // In order for 'go test' to run this suite, we need to create
