@@ -3,8 +3,8 @@ package deployments
 import (
 	"context"
 
-	"github.com/rancher/rancher/tests/v2prov/defaults"
 	"github.com/rancher/shepherd/clients/rancher"
+	"github.com/rancher/shepherd/extensions/defaults"
 	"github.com/rancher/shepherd/pkg/api/scheme"
 	"github.com/rancher/shepherd/pkg/wait"
 	appv1 "k8s.io/api/apps/v1"

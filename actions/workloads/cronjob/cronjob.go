@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/rancher/rancher/pkg/api/scheme"
-	"github.com/rancher/rancher/tests/v2prov/defaults"
 	"github.com/rancher/shepherd/clients/rancher"
+	"github.com/rancher/shepherd/extensions/defaults"
 	unstruc "github.com/rancher/shepherd/extensions/unstructured"
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
 	"github.com/rancher/shepherd/pkg/wait"
