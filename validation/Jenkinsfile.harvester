@@ -1,5 +1,5 @@
 #!groovy
-node {
+node("harvester-vpn-1") {
     def rootPath = "/root/go/src/github.com/rancher/tests/validation/"
     def job_name = "${JOB_NAME}"
     if (job_name.contains('/')) { 
