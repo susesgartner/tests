@@ -5,12 +5,14 @@ import (
 
 	"github.com/rancher/shepherd/clients/rancher"
 	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
+	"github.com/rancher/shepherd/extensions/cloudcredentials"
 	extensionscluster "github.com/rancher/shepherd/extensions/clusters"
 	extensionsettings "github.com/rancher/shepherd/extensions/settings"
 	"github.com/rancher/shepherd/pkg/config"
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
 	"github.com/rancher/shepherd/pkg/session"
 	"github.com/rancher/tests/actions/clusters"
+	"github.com/rancher/tests/actions/machinepools"
 	"github.com/rancher/tests/actions/provisioning"
 	"github.com/rancher/tests/actions/provisioning/permutations"
 	"github.com/rancher/tests/actions/provisioninginput"
@@ -73,7 +75,10 @@ func (ra *RestrictedAdminReplacementTestSuite) TestRestrictedAdminReplacementCre
 	clusterConfig := clusters.ConvertConfigToClusterConfig(&provisioningConfig)
 	clusterConfig.KubernetesVersion = ra.provisioningConfig.K3SKubernetesVersions[0]
 	k3sprovider, _, _, _ := permutations.GetClusterProvider(permutations.K3SProvisionCluster, (*clusterConfig.Providers)[0], &provisioningConfig)
-	clusterObject, err := provisioning.CreateProvisioningCluster(createdRAReplacementUserClient, *k3sprovider, clusterConfig, nil)
+	credentialSpec := cloudcredentials.LoadCloudCredential(string(k3sprovider.Name))
+	machineConfigSpec := machinepools.LoadMachineConfigs(string(k3sprovider.Name))
+
+	clusterObject, err := provisioning.CreateProvisioningCluster(createdRAReplacementUserClient, *k3sprovider, credentialSpec, clusterConfig, machineConfigSpec, nil)
 	require.NoError(ra.T(), err)
 
 	provisioning.VerifyCluster(ra.T(), ra.client, clusterConfig, clusterObject)
