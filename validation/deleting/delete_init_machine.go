@@ -3,25 +3,28 @@ package deleting
 import (
 	"testing"
 
-	"github.com/rancher/rancher/tests/v2/actions/machinepools"
 	"github.com/rancher/shepherd/clients/rancher"
 	"github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults"
-	"github.com/rancher/shepherd/extensions/defaults/stevetypes"
 	"github.com/rancher/shepherd/extensions/steve"
+	"github.com/rancher/tests/actions/machinepools"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+)
+
+const (
+	machineSteveResourceType = "cluster.x-k8s.io.machine"
 )
 
 func deleteInitMachine(t *testing.T, client *rancher.Client, clusterID string) {
 	initMachine, err := machinepools.GetInitMachine(client, clusterID)
 	require.NoError(t, err)
 
-	err = client.Steve.SteveType(stevetypes.Machine).Delete(initMachine)
+	err = client.Steve.SteveType(machineSteveResourceType).Delete(initMachine)
 	require.NoError(t, err)
 
 	logrus.Info("Awaiting machine deletion...")
-	err = steve.WaitForResourceDeletion(client.Steve, initMachine, defaults.FiveHundredMillisecondTimeout, defaults.TenMinuteTimeout)
+	err = steve.WaitForSteveResourceDeletion(client, defaults.FiveHundredMillisecondTimeout, defaults.TenMinuteTimeout, machineSteveResourceType, initMachine.ID)
 	require.NoError(t, err)
 
 	logrus.Info("Awaiting machine replacement...")
