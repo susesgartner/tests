@@ -1,6 +1,8 @@
 package nodetemplates
 
 import (
+	"time"
+
 	"github.com/rancher/shepherd/clients/rancher"
 	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
 	"github.com/rancher/shepherd/extensions/cloudcredentials"
@@ -23,6 +25,8 @@ func CreateAWSNodeTemplate(rancherClient *rancher.Client) (*nodetemplates.NodeTe
 	if err != nil {
 		return nil, err
 	}
+
+	time.Sleep(20 * time.Second)
 
 	nodeTemplate := nodetemplates.NodeTemplate{
 		EngineInstallURL:            "https://releases.rancher.com/install-docker/24.0.sh",
