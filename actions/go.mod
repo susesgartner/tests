@@ -65,7 +65,7 @@ require (
 	github.com/rancher/machine v0.15.0-rancher126
 	github.com/rancher/norman v0.5.2
 	github.com/rancher/rancher v0.0.0-20250228094653-6e82729d08cf
-	github.com/rancher/shepherd v0.0.0-20250225165610-3b5c95e0e613
+	github.com/rancher/shepherd v0.0.0-20250313161034-078bebe708e3
 	github.com/rancher/wrangler v1.1.2
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
