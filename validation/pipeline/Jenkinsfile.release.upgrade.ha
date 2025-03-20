@@ -125,7 +125,7 @@ node {
                 }
                 
                 try{
-                  sh "./tests/v2/validation/build.sh"
+                  sh "./validation/build.sh"
                   
                   sh "docker volume create --name ${validationVolume}"
 
@@ -133,7 +133,7 @@ node {
                   " -e RANCHER_VERSION_TO_UPGRADE=\$RANCHER_VERSION_TO_UPGRADE " +
                   "${imageName} sh -c \"${workPath}pipeline/scripts/rancher_k8s_version.sh\""
 
-                  sh "docker cp ${setupContainer}:/root/go/src/github.com/rancher/rancher/testrancherk8s.yaml ./"
+                  sh "docker cp ${setupContainer}:/root/go/src/github.com/rancher/tests/testrancherk8s.yaml ./"
 
                   println "contents of test rancher versions: ./${testRancherVersions}"
                   
