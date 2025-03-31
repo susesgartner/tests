@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 error_handler() {
   local lineno=${BASH_LINENO[0]}
   local funcname=${FUNCNAME[1]} 
@@ -46,6 +48,10 @@ grep-for-suite-and-test-name() {
 git fetch --all -q
 git config user.name "github-actions"
 git config user.email "github-actions@github.com"
+
+git remote add forked-upstream https://github.com/"$2".git
+git fetch forked-upstream -q
+
 git checkout "$1" -q
 git rebase "origin/$TARGET_BRANCH" --strategy-option=theirs -q
 
@@ -98,11 +104,15 @@ wait
 
 # curl needs non-escaped newlines to read properly into json
 curl_digestable_string=""
+count=0
 while IFS= read -r official_tests; do
     curl_digestable_string+=$"\n$official_tests"
+    ((count++))
 done < "$TEMP_DIR/diff.used-anywhere"
 
-echo "$curl_digestable_string"
+if [$count -gt 1 ]; then
+    echo "$curl_digestable_string"
+fi
 
 # Clean up
 rm -rf "$TEMP_DIR"
