@@ -331,6 +331,18 @@ node {
                 ).trim()
                 println "HA Helm extra settings option to be used on an upgrade: ${env.RANCHER_HELM_EXTRA_SETTINGS_TO_UPGRADE}"
 
+                env.RANCHER_LOCAL_CLUSTER_TYPE= sh (
+                  script: "./yq '.ha.rancherLocalClusterType' ${initConfigPath}",
+                  returnStdout: true
+                ).trim()
+                println "Cluster Type: ${env.RANCHER_LOCAL_CLUSTER_TYPE}"
+
+                env.RANCHER_RKE2_VERSION= sh (
+                  script: "./yq '.ha.rancherRKE2Version' ${initConfigPath}",
+                  returnStdout: true
+                ).trim()
+                println "RKE2 Version: ${env.RANCHER_RKE2_VERSION}"
+
                 env.HA_CLEANUP= sh (
                   script: "./yq '.ha.cleanup' ${initConfigPath}",
                   returnStdout: true
@@ -353,6 +365,8 @@ node {
                  string(name: 'RANCHER_HA_HARDENED', value: "${env.RANCHER_HA_HARDENED}"),
                  string(name: 'RANCHER_PSP_ENABLED', value: "${env.RANCHER_PSP_ENABLED}"),
                  string(name: 'RANCHER_HELM_EXTRA_SETTINGS', value: "${env.RANCHER_HELM_EXTRA_SETTINGS}")
+                 string(name: 'RANCHER_LOCAL_CLUSTER_TYPE', value: "${env.RANCHER_LOCAL_CLUSTER_TYPE}"),
+                 string(name: 'RANCHER_RKE2_VERSION', value: "${env.RANCHER_RKE2_VERSION}")                
                 ]
 
               build job: 'rancher-v3_ha_deploy', parameters: deployParams

@@ -63,6 +63,8 @@ type HAConfig struct {
 	HelmExtraSettingsToUpgrade string `yaml:"helmExtraSettingsToUpgrade" json:"helmExtraSettingsToUpgrade"`
 	HelmRepoURL                string `yaml:"helmURL" json:"helmURL"`
 	HelmRepoURLToUpgrade       string `yaml:"helmURLToUpgrade" json:"helmURLToUpgrade"`
+	RancherLocalClusterType    string `yaml:"rancherLocalClusterType" json:"rancherLocalClusterType"`
+	RancherRKE2Version         string `yaml:"rancherRKE2Version" json:"rancherRKE2Version"`
 }
 
 // ClustersConfigKey is the key name of Clusters values in the cattle config
