@@ -1,5 +1,3 @@
-//go:build (validation || extended) && !infra.any && !infra.aks && !infra.eks && !infra.gke && !infra.rke2k3s && !cluster.any && !cluster.custom && !cluster.nodedriver && !sanity && !stress
-
 package rke2
 
 import (
@@ -8,6 +6,7 @@ import (
 
 	"github.com/rancher/shepherd/clients/rancher"
 	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
+	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	"github.com/rancher/shepherd/extensions/cloudcredentials"
 	"github.com/rancher/shepherd/extensions/users"
 	password "github.com/rancher/shepherd/extensions/users/passwordgenerator"
@@ -22,43 +21,40 @@ import (
 	"github.com/rancher/tests/actions/machinepools"
 	"github.com/rancher/tests/actions/provisioning"
 	"github.com/rancher/tests/actions/provisioninginput"
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 type RKE2NodeDriverProvisioningTestSuite struct {
-	suite.Suite
 	client             *rancher.Client
 	session            *session.Session
 	standardUserClient *rancher.Client
 	cattleConfigs      []map[string]any
+	user               *management.User
 }
 
-func (r *RKE2NodeDriverProvisioningTestSuite) TearDownSuite() {
-	r.session.Cleanup()
-}
-
-func (r *RKE2NodeDriverProvisioningTestSuite) SetupSuite() {
+func setupSuite(t *testing.T) RKE2NodeDriverProvisioningTestSuite {
+	var r RKE2NodeDriverProvisioningTestSuite
 	testSession := session.NewSession()
 	r.session = testSession
 
 	client, err := rancher.NewClient("", testSession)
-	require.NoError(r.T(), err)
+	assert.NoError(t, err)
 	r.client = client
 
 	cattleConfig := config.LoadConfigFromFile(os.Getenv(config.ConfigEnvironmentKey))
 
 	providerPermutation, err := permutationdata.CreateProviderPermutation(cattleConfig)
-	require.NoError(r.T(), err)
+	assert.NoError(t, err)
 
 	k8sPermutation, err := permutationdata.CreateK8sPermutation(r.client, "rke2", cattleConfig)
-	require.NoError(r.T(), err)
+	assert.NoError(t, err)
 
 	cniPermutation, err := permutationdata.CreateCNIPermutation(cattleConfig)
-	require.NoError(r.T(), err)
+	assert.NoError(t, err)
 
 	permutedConfigs, err := permutations.Permute([]permutations.Permutation{*k8sPermutation, *providerPermutation, *cniPermutation}, cattleConfig)
-	require.NoError(r.T(), err)
+	assert.NoError(t, err)
 
 	r.cattleConfigs = append(r.cattleConfigs, permutedConfigs...)
 
@@ -73,17 +69,22 @@ func (r *RKE2NodeDriverProvisioningTestSuite) SetupSuite() {
 	}
 
 	newUser, err := users.CreateUserWithRole(client, user, "user")
-	require.NoError(r.T(), err)
+	assert.NoError(t, err)
 
 	newUser.Password = user.Password
+	r.user = newUser
 
 	standardUserClient, err := client.AsUser(newUser)
-	require.NoError(r.T(), err)
+	assert.NoError(t, err)
 
 	r.standardUserClient = standardUserClient
+
+	return r
 }
 
-func (r *RKE2NodeDriverProvisioningTestSuite) TestProvisioningRKE2Cluster() {
+func TestProvisioningRKE2Cluster(t *testing.T) {
+	r := setupSuite(t)
+
 	nodeRolesAll := []provisioninginput.MachinePools{provisioninginput.AllRolesMachinePool}
 	nodeRolesShared := []provisioninginput.MachinePools{provisioninginput.EtcdControlPlaneMachinePool, provisioninginput.WorkerMachinePool}
 	nodeRolesDedicated := []provisioninginput.MachinePools{provisioninginput.EtcdMachinePool, provisioninginput.ControlPlaneMachinePool, provisioninginput.WorkerMachinePool}
@@ -104,34 +105,50 @@ func (r *RKE2NodeDriverProvisioningTestSuite) TestProvisioningRKE2Cluster() {
 
 	for _, tt := range tests {
 		if !tt.runFlag {
-			r.T().Logf("SKIPPED")
+			t.Logf("SKIPPED")
 			continue
 		}
 
-		r.Run(tt.name, func() {
+		var err error
+
+		testSession := session.NewSession()
+		tt.client, err = tt.client.WithSession(testSession)
+		assert.NoError(t, err)
+
+		t.Cleanup(func() {
+			logrus.Info("Running cleanup")
+			testSession.Cleanup()
+		})
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			var cluster *v1.SteveAPIObject
 			for _, cattleConfig := range r.cattleConfigs {
 				clusterConfig := new(clusters.ClusterConfig)
 				operations.LoadObjectFromMap(permutationdata.ClusterConfigKey, cattleConfig, clusterConfig)
 				clusterConfig.MachinePools = tt.machinePools
 
-				require.NotNil(r.T(), clusterConfig.Provider)
+				assert.NotNil(t, clusterConfig.Provider)
 				if clusterConfig.Provider != "vsphere" && tt.isWindows {
-					r.T().Skip("Windows test requires access to vsphere")
+					t.Skip("Windows test requires access to vsphere")
 				}
 
 				provider := provisioning.CreateProvider(clusterConfig.Provider)
 				credentialSpec := cloudcredentials.LoadCloudCredential(string(provider.Name))
 				machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
 
-				clusterObject, err := provisioning.CreateProvisioningCluster(tt.client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)
-				require.NoError(r.T(), err)
+				cluster, err = provisioning.CreateProvisioningCluster(tt.client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)
+				assert.NoError(t, err)
 
-				provisioning.VerifyCluster(r.T(), tt.client, clusterConfig, clusterObject)
+				logrus.Info("Verifying")
+				provisioning.VerifyCluster(t, tt.client, clusterConfig, cluster)
 			}
 		})
 	}
 }
 
+/*
 func (r *RKE2NodeDriverProvisioningTestSuite) TestProvisioningRKE2ClusterDynamicInput() {
 	tests := []struct {
 		name   string
@@ -162,10 +179,4 @@ func (r *RKE2NodeDriverProvisioningTestSuite) TestProvisioningRKE2ClusterDynamic
 			}
 		})
 	}
-}
-
-// In order for 'go test' to run this suite, we need to create
-// a normal test function and pass our suite to suite.Run
-func TestRKE2ProvisioningTestSuite(t *testing.T) {
-	suite.Run(t, new(RKE2NodeDriverProvisioningTestSuite))
-}
+}*/
