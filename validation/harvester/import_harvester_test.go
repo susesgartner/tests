@@ -7,10 +7,12 @@ import (
 
 	"github.com/rancher/shepherd/clients/harvester"
 	"github.com/rancher/shepherd/clients/rancher"
+	"github.com/rancher/shepherd/extensions/cloudcredentials"
 	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/sirupsen/logrus"
 
 	"github.com/rancher/shepherd/pkg/config"
+	shepherdConfig "github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/session"
 	harvesteraction "github.com/rancher/tests/interoperability/harvester"
 	"github.com/stretchr/testify/require"
@@ -52,6 +54,20 @@ func (h *HarvesterTestSuite) TestImport() {
 	harvesterInRancherID, err := harvesteraction.RegisterHarvesterWithRancher(h.client, h.harvesterClient)
 	require.NoError(h.T(), err)
 	logrus.Info(harvesterInRancherID)
+
+	cluster, err := h.client.Management.Cluster.ByID(harvesterInRancherID)
+	require.NoError(h.T(), err)
+
+	kubeConfig, err := h.client.Management.Cluster.ActionGenerateKubeconfig(cluster)
+	require.NoError(h.T(), err)
+
+	var harvesterCredentialConfig cloudcredentials.HarvesterCredentialConfig
+
+	harvesterCredentialConfig.ClusterID = harvesterInRancherID
+	harvesterCredentialConfig.ClusterType = "imported"
+	harvesterCredentialConfig.KubeconfigContent = kubeConfig.Config
+
+	shepherdConfig.UpdateConfig(cloudcredentials.HarvesterCredentialConfigurationFileKey, harvesterCredentialConfig)
 }
 
 // In order for 'go test' to run this suite, we need to create

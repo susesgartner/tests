@@ -1,10 +1,10 @@
 FROM registry.suse.com/bci/golang:1.24
 
 # Configure Go
-ENV GOPATH /root/go
-ENV PATH ${PATH}:/root/go/bin
+ENV GOPATH=/root/go
+ENV PATH=${PATH}:/root/go/bin
 
-ENV WORKSPACE ${GOPATH}/src/github.com/rancher/tests
+ENV WORKSPACE=${GOPATH}/src/github.com/rancher/tests
 
 WORKDIR $WORKSPACE/validation
 
