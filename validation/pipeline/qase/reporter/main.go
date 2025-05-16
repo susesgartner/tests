@@ -18,22 +18,9 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const (
-	automationSuiteID    = int32(554)
-	failStatus           = "fail"
-	passStatus           = "pass"
-	skipStatus           = "skip"
-	automationTestNameID = 15
-	testSourceID         = 14
-	testSource           = "GoValidation"
-	multiSubTestPattern  = `(\w+/\w+/\w+){1,}`
-	subtestPattern       = `(\w+/\w+){1,1}`
-	testResultsJSON      = "results.json"
-)
-
 var (
-	multiSubTestReg = regexp.MustCompile(multiSubTestPattern)
-	subTestReg      = regexp.MustCompile(subtestPattern)
+	multiSubTestReg = regexp.MustCompile(qasedefaults.MultiSubTestPattern)
+	subTestReg      = regexp.MustCompile(qasedefaults.SubtestPattern)
 	qaseToken       = os.Getenv(qasedefaults.QaseTokenEnvVar)
 	runIDEnvVar     = os.Getenv(qasedefaults.TestRunEnvVar)
 )
@@ -90,7 +77,7 @@ func getAllAutomationTestCases(client *qase.APIClient) (map[string]qase.TestCase
 }
 
 func readTestCase() ([]testcase.GoTestOutput, error) {
-	file, err := os.Open(testResultsJSON)
+	file, err := os.Open(qasedefaults.TestResultsJSON)
 	if err != nil {
 		return nil, err
 	}
@@ -120,9 +107,9 @@ func parseCorrectTestCases(testCases []testcase.GoTestOutput) map[string]*testca
 		} else if testCase.Action == "output" && strings.Contains(testCase.Test, "/") {
 			goTestCase := finalTestCases[testCase.Test]
 			goTestCase.StackTrace += testCase.Output
-		} else if testCase.Action == skipStatus {
+		} else if testCase.Action == qasedefaults.SkipStatus {
 			delete(finalTestCases, testCase.Test)
-		} else if (testCase.Action == failStatus || testCase.Action == passStatus) && strings.Contains(testCase.Test, "/") {
+		} else if (testCase.Action == qasedefaults.FailStatus || testCase.Action == qasedefaults.PassStatus) && strings.Contains(testCase.Test, "/") {
 			goTestCase := finalTestCases[testCase.Test]
 
 			if goTestCase != nil {
@@ -137,7 +124,7 @@ func parseCorrectTestCases(testCases []testcase.GoTestOutput) map[string]*testca
 				}
 
 			}
-		} else if testCase.Action == failStatus && testCase.Test == "" {
+		} else if testCase.Action == qasedefaults.FailStatus && testCase.Test == "" {
 			timeoutFailure = true
 		}
 	}
@@ -148,7 +135,7 @@ func parseCorrectTestCases(testCases []testcase.GoTestOutput) map[string]*testca
 		testCase.Name = testName
 		testCase.TestSuite = testSuite[0 : len(testSuite)-1]
 		if timeoutFailure && testCase.Status == "" {
-			testCase.Status = failStatus
+			testCase.Status = qasedefaults.FailStatus
 		}
 	}
 
@@ -177,7 +164,7 @@ func reportTestQases(client *qase.APIClient, testRunID int64) error {
 				return err
 			}
 
-			if goTestCase.Status == failStatus {
+			if goTestCase.Status == qasedefaults.FailStatus {
 				resultTestMap = append(resultTestMap, goTestCase)
 			}
 		} else {
@@ -192,7 +179,7 @@ func reportTestQases(client *qase.APIClient, testRunID int64) error {
 				return err
 			}
 
-			if goTestCase.Status == failStatus {
+			if goTestCase.Status == qasedefaults.FailStatus {
 				resultTestMap = append(resultTestMap, goTestCase)
 			}
 		}
@@ -209,7 +196,7 @@ func reportTestQases(client *qase.APIClient, testRunID int64) error {
 }
 
 func writeTestSuiteToQase(client *qase.APIClient, testCase testcase.GoTestCase) (*int64, error) {
-	parentSuite := int64(automationSuiteID)
+	parentSuite := int64(qasedefaults.AutomationSuiteID)
 	var id int64
 	for _, suiteGo := range testCase.TestSuite {
 		localVarOptionals := &qase.SuitesApiGetSuitesOpts{
@@ -260,7 +247,7 @@ func writeTestCaseToQase(client *qase.APIClient, testCase testcase.GoTestCase) (
 		IsFlaky:    int32(0),
 		Automation: int32(2),
 		CustomField: map[string]string{
-			fmt.Sprintf("%d", testSourceID): testSource,
+			fmt.Sprintf("%d", qasedefaults.TestSourceID): qasedefaults.TestSource,
 		},
 	}
 	caseID, _, err := client.CasesApi.CreateCase(context.TODO(), testQaseBody, qasedefaults.RancherManagerProjectID)
@@ -298,7 +285,7 @@ func updateTestInRun(client *qase.APIClient, testCase testcase.GoTestCase, qaseT
 
 func getAutomationTestName(customFields []qase.CustomFieldValue) string {
 	for _, field := range customFields {
-		if field.Id == automationTestNameID {
+		if field.Id == qasedefaults.AutomationTestNameID {
 			return field.Value
 		}
 	}

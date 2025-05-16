@@ -14,7 +14,6 @@ import (
 )
 
 const (
-	runSourceID    = 16
 	recurringRunID = 1
 )
 
@@ -48,7 +47,7 @@ func main() {
 		recurringTestRun.ID = newRunID
 		err = writeToConfigFile(recurringTestRun)
 		if err != nil {
-			logrus.Error("error writiing test run config: ", err)
+			logrus.Error("error writing test run config: ", err)
 		}
 	} else {
 
@@ -69,7 +68,7 @@ func createTestRun(client *qase.APIClient, testRunName string) (*qase.IdResponse
 	runCreateBody := qase.RunCreate{
 		Title: testRunName,
 		CustomField: map[string]string{
-			fmt.Sprintf("%d", runSourceID): fmt.Sprintf("%d", recurringRunID),
+			fmt.Sprintf("%d", qasedefaults.RunSourceID): fmt.Sprintf("%d", qasedefaults.RecurringRunID),
 		},
 	}
 
