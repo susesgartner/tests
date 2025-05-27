@@ -170,6 +170,7 @@ func reportTestQases(client *qase.APIClient, testRunID int64) error {
 
 	resultTestMap := []*testcase.GoTestCase{}
 	for _, goTestCase := range goTestCases {
+		logrus.Info(goTestCase.Name)
 		if testQase, ok := qaseTestCases[goTestCase.Name]; ok {
 			// update test status
 			err = updateTestInRun(client, *goTestCase, testQase.Id, testRunID)
