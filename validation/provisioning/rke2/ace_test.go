@@ -20,6 +20,8 @@ import (
 	"github.com/rancher/tests/actions/machinepools"
 	"github.com/rancher/tests/actions/provisioning"
 	"github.com/rancher/tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/qase"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -110,7 +112,7 @@ func (r *RKE2ACETestSuite) TestProvisioningRKE2ClusterACE() {
 		machinePools []provisioninginput.MachinePools
 		client       *rancher.Client
 	}{
-		{"Multiple Control Planes - Standard", nodeRoles0, r.standardUserClient},
+		{"ACE|etcd|3_cp|worker", nodeRoles0, r.standardUserClient},
 	}
 	// Test is obsolete when ACE is not set.
 	for _, tt := range tests {
@@ -133,6 +135,12 @@ func (r *RKE2ACETestSuite) TestProvisioningRKE2ClusterACE() {
 		require.NoError(r.T(), err)
 
 		provisioning.VerifyCluster(r.T(), client, clusterConfig, clusterObject)
+
+		params := provisioning.GetProvisioningSchemaParams(tt.client, r.cattleConfig)
+		err = qase.UpdateSchemaParameters(tt.name, params)
+		if err != nil {
+			logrus.Warningf("Failed to upload schema parameters %s", err)
+		}
 	}
 }
 

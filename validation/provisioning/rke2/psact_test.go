@@ -20,11 +20,13 @@ import (
 	"github.com/rancher/tests/actions/machinepools"
 	"github.com/rancher/tests/actions/provisioning"
 	"github.com/rancher/tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/qase"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
-type RKE2PSACTTestSuite struct {
+type PSACTTest struct {
 	suite.Suite
 	client             *rancher.Client
 	session            *session.Session
@@ -32,11 +34,8 @@ type RKE2PSACTTestSuite struct {
 	cattleConfig       map[string]any
 }
 
-func (r *RKE2PSACTTestSuite) TearDownSuite() {
-	r.session.Cleanup()
-}
-
-func (r *RKE2PSACTTestSuite) SetupSuite() {
+func psactSetup(t *testing.T) PSACTTest {
+	var r PSACTTest
 	testSession := session.NewSession()
 	r.session = testSession
 
@@ -71,7 +70,7 @@ func (r *RKE2PSACTTestSuite) SetupSuite() {
 	r.standardUserClient = standardUserClient
 }
 
-func (r *RKE2PSACTTestSuite) TestRKE2PSACTNodeDriverCluster() {
+func TestPSACT(t *testing.T) {
 	nodeRolesStandard := []provisioninginput.MachinePools{provisioninginput.EtcdMachinePool, provisioninginput.ControlPlaneMachinePool, provisioninginput.WorkerMachinePool}
 
 	nodeRolesStandard[0].MachinePoolConfig.Quantity = 3
@@ -84,9 +83,9 @@ func (r *RKE2PSACTTestSuite) TestRKE2PSACTNodeDriverCluster() {
 		psact        provisioninginput.PSACT
 		client       *rancher.Client
 	}{
-		{"Rancher Privileged " + provisioninginput.StandardClientName.String(), nodeRolesStandard, "rancher-privileged", r.standardUserClient},
-		{"Rancher Restricted " + provisioninginput.StandardClientName.String(), nodeRolesStandard, "rancher-restricted", r.standardUserClient},
-		{"Rancher Baseline " + provisioninginput.AdminClientName.String(), nodeRolesStandard, "rancher-baseline", r.client},
+		{"RKE2_Rancher_Privileged|3_etcd|2_cp|3_worker", nodeRolesStandard, "rancher-privileged", r.client},
+		{"RKE2_Rancher_Restricted|3_etcd|2_cp|3_worker", nodeRolesStandard, "rancher-restricted", r.client},
+		{"RKE2_Rancher_Baseline|3_etcd|2_cp|3_worker", nodeRolesStandard, "rancher-baseline", r.client},
 	}
 
 	for _, tt := range tests {
@@ -106,11 +105,11 @@ func (r *RKE2PSACTTestSuite) TestRKE2PSACTNodeDriverCluster() {
 
 			provisioning.VerifyCluster(r.T(), tt.client, clusterConfig, clusterObject)
 		})
-	}
-}
 
-// In order for 'go test' to run this suite, we need to create
-// a normal test function and pass our suite to suite.Run
-func TestRKE2PSACTTestSuite(t *testing.T) {
-	suite.Run(t, new(RKE2PSACTTestSuite))
+		params := provisioning.GetProvisioningSchemaParams(tt.client, r.cattleConfig)
+		err := qase.UpdateSchemaParameters(tt.name, params)
+		if err != nil {
+			logrus.Warningf("Failed to upload schema parameters %s", err)
+		}
+	}
 }
