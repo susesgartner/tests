@@ -11,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/rancher/shepherd/clients/corral"
+	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
 
 	apiv1 "github.com/rancher/rancher/pkg/apis/provisioning.cattle.io/v1"
@@ -184,7 +185,7 @@ func CreateProvisioningCluster(client *rancher.Client, provider Provider, creden
 }
 
 // CreateProvisioningCustomCluster provisions a non-rke1 cluster using a 3rd party client for its nodes, then runs verify checks
-func CreateProvisioningCustomCluster(client *rancher.Client, externalNodeProvider *ExternalNodeProvider, clustersConfig *clusters.ClusterConfig) (*v1.SteveAPIObject, error) {
+func CreateProvisioningCustomCluster(client *rancher.Client, externalNodeProvider *ExternalNodeProvider, clustersConfig *clusters.ClusterConfig, ec2Configs *ec2.AWSEC2Configs) (*v1.SteveAPIObject, error) {
 	setLogrusFormatter()
 	rolesPerNode := []string{}
 	quantityPerPool := []int32{}
@@ -221,7 +222,7 @@ func CreateProvisioningCustomCluster(client *rancher.Client, externalNodeProvide
 		}
 	}
 
-	nodes, err := externalNodeProvider.NodeCreationFunc(client, rolesPerPool, quantityPerPool)
+	nodes, err := externalNodeProvider.NodeCreationFunc(client, rolesPerPool, quantityPerPool, ec2Configs)
 	if err != nil {
 		return nil, err
 	}
@@ -429,7 +430,7 @@ func CreateProvisioningRKE1CustomCluster(client *rancher.Client, externalNodePro
 		}
 	}
 
-	nodes, err := externalNodeProvider.NodeCreationFunc(client, rolesPerPool, quantityPerPool)
+	nodes, err := externalNodeProvider.NodeCreationFunc(client, rolesPerPool, quantityPerPool, nil)
 	if err != nil {
 		return nil, nil, err
 	}

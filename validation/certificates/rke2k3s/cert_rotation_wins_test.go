@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults/stevetypes"
@@ -51,6 +52,9 @@ func (c *CertRotationWindowsTestSuite) SetupSuite() {
 	clusterConfig := new(clusters.ClusterConfig)
 	operations.LoadObjectFromMap(defaults.ClusterConfigKey, c.cattleConfig, clusterConfig)
 
+	awsEC2Configs := new(ec2.AWSEC2Configs)
+	operations.LoadObjectFromMap(ec2.ConfigurationFileKey, c.cattleConfig, awsEC2Configs)
+
 	if clusterConfig.Provider != "vsphere" {
 		c.T().Skip("Test requires vSphere provider")
 	}
@@ -69,7 +73,7 @@ func (c *CertRotationWindowsTestSuite) SetupSuite() {
 
 	clusterConfig.MachinePools = nodeRolesStandard
 
-	c.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(c.T(), standardUserClient, extClusters.RKE2ClusterType.String(), clusterConfig, true, false)
+	c.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(c.T(), standardUserClient, extClusters.RKE2ClusterType.String(), clusterConfig, awsEC2Configs, true, false)
 	require.NoError(c.T(), err)
 }
 

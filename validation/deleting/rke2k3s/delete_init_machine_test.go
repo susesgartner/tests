@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/pkg/config"
@@ -53,6 +54,9 @@ func (d *DeleteInitMachineTestSuite) SetupSuite() {
 	k3sClusterConfig := new(clusters.ClusterConfig)
 	operations.LoadObjectFromMap(defaults.ClusterConfigKey, d.cattleConfig, k3sClusterConfig)
 
+	awsEC2Configs := new(ec2.AWSEC2Configs)
+	operations.LoadObjectFromMap(ec2.ConfigurationFileKey, d.cattleConfig, awsEC2Configs)
+
 	nodeRolesStandard := []provisioninginput.MachinePools{
 		provisioninginput.EtcdMachinePool,
 		provisioninginput.ControlPlaneMachinePool,
@@ -66,10 +70,10 @@ func (d *DeleteInitMachineTestSuite) SetupSuite() {
 	rke2ClusterConfig.MachinePools = nodeRolesStandard
 	k3sClusterConfig.MachinePools = nodeRolesStandard
 
-	d.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(d.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, true, false)
+	d.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(d.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, awsEC2Configs, true, false)
 	require.NoError(d.T(), err)
 
-	d.k3sClusterID, err = resources.ProvisionRKE2K3SCluster(d.T(), standardUserClient, extClusters.K3SClusterType.String(), k3sClusterConfig, true, false)
+	d.k3sClusterID, err = resources.ProvisionRKE2K3SCluster(d.T(), standardUserClient, extClusters.K3SClusterType.String(), k3sClusterConfig, awsEC2Configs, true, false)
 	require.NoError(d.T(), err)
 }
 

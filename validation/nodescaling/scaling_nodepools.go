@@ -3,11 +3,13 @@ package nodescaling
 import (
 	"testing"
 
+	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
 	"github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/clusters/aks"
 	"github.com/rancher/shepherd/extensions/clusters/eks"
 	"github.com/rancher/shepherd/extensions/clusters/gke"
+	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/tests/actions/machinepools"
 	"github.com/rancher/tests/actions/provisioning"
 	rke1 "github.com/rancher/tests/actions/rke1/nodepools"
@@ -50,7 +52,7 @@ func ScalingRKE2K3SNodePools(t *testing.T, client *rancher.Client, clusterID str
 }
 
 // ScalingRKE2K3SCustomClusterPools scales the node pools of an RKE2 or K3S custom cluster.
-func ScalingRKE2K3SCustomClusterPools(t *testing.T, client *rancher.Client, clusterID string, nodeProvider string, nodeRoles machinepools.NodeRoles) {
+func ScalingRKE2K3SCustomClusterPools(t *testing.T, client *rancher.Client, clusterID string, nodeProvider string, nodeRoles machinepools.NodeRoles, awsEC2Configs *ec2.AWSEC2Configs) {
 	rolesPerNode := []string{}
 	quantityPerPool := []int32{}
 	rolesPerPool := []string{}
@@ -85,7 +87,7 @@ func ScalingRKE2K3SCustomClusterPools(t *testing.T, client *rancher.Client, clus
 	var externalNodeProvider provisioning.ExternalNodeProvider
 	externalNodeProvider = provisioning.ExternalNodeProviderSetup(nodeProvider)
 
-	nodes, err := externalNodeProvider.NodeCreationFunc(client, rolesPerPool, quantityPerPool)
+	nodes, err := externalNodeProvider.NodeCreationFunc(client, rolesPerPool, quantityPerPool, awsEC2Configs)
 	require.NoError(t, err)
 
 	cluster, err := client.Steve.SteveType(ProvisioningSteveResourceType).ByID(clusterID)
@@ -155,7 +157,10 @@ func ScalingRKE1CustomClusterPools(t *testing.T, client *rancher.Client, cluster
 	var externalNodeProvider provisioning.ExternalNodeProvider
 	externalNodeProvider = provisioning.ExternalNodeProviderSetup(nodeProvider)
 
-	nodes, err := externalNodeProvider.NodeCreationFunc(client, rolesPerPool, quantityPerPool)
+	awsEC2Configs := new(ec2.AWSEC2Configs)
+	config.LoadConfig(ec2.ConfigurationFileKey, awsEC2Configs)
+
+	nodes, err := externalNodeProvider.NodeCreationFunc(client, rolesPerPool, quantityPerPool, awsEC2Configs)
 	require.NoError(t, err)
 
 	cluster, err := client.Management.Cluster.ByID(clusterID)

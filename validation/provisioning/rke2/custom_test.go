@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
 	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
-	"github.com/rancher/shepherd/extensions/cloudcredentials"
 	"github.com/rancher/shepherd/extensions/users"
 	password "github.com/rancher/shepherd/extensions/users/passwordgenerator"
 	"github.com/rancher/shepherd/pkg/config"
@@ -17,7 +17,6 @@ import (
 	"github.com/rancher/shepherd/pkg/session"
 	"github.com/rancher/tests/actions/clusters"
 	"github.com/rancher/tests/actions/config/defaults"
-	"github.com/rancher/tests/actions/machinepools"
 	"github.com/rancher/tests/actions/provisioning"
 	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/rancher/tests/actions/qase"
@@ -26,15 +25,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type psactTest struct {
+type customTest struct {
 	client             *rancher.Client
 	session            *session.Session
 	standardUserClient *rancher.Client
 	cattleConfig       map[string]any
 }
 
-func psactSetup(t *testing.T) psactTest {
-	var r psactTest
+func customSetup(t *testing.T) customTest {
+	var r customTest
 	testSession := session.NewSession()
 	r.session = testSession
 
@@ -48,7 +47,7 @@ func psactSetup(t *testing.T) psactTest {
 	r.cattleConfig, err = packageDefaults.LoadPackageDefaults(r.cattleConfig, "")
 	assert.NoError(t, err)
 
-	r.cattleConfig, err = defaults.SetK8sDefault(client, "rke2", r.cattleConfig)
+	r.cattleConfig, err = defaults.SetK8sDefault(r.client, "rke2", r.cattleConfig)
 	assert.NoError(t, err)
 
 	enabled := true
@@ -74,9 +73,13 @@ func psactSetup(t *testing.T) psactTest {
 	return r
 }
 
-func TestPSACT(t *testing.T) {
+func TestCustom(t *testing.T) {
 	t.Parallel()
-	r := psactSetup(t)
+	r := customSetup(t)
+	nodeRolesAll := []provisioninginput.MachinePools{provisioninginput.AllRolesMachinePool}
+	nodeRolesShared := []provisioninginput.MachinePools{provisioninginput.EtcdControlPlaneMachinePool, provisioninginput.WorkerMachinePool}
+	nodeRolesDedicated := []provisioninginput.MachinePools{provisioninginput.EtcdMachinePool, provisioninginput.ControlPlaneMachinePool, provisioninginput.WorkerMachinePool}
+	nodeRolesDedicatedWindows := []provisioninginput.MachinePools{provisioninginput.EtcdMachinePool, provisioninginput.ControlPlaneMachinePool, provisioninginput.WorkerMachinePool, provisioninginput.WindowsMachinePool}
 	nodeRolesStandard := []provisioninginput.MachinePools{provisioninginput.EtcdMachinePool, provisioninginput.ControlPlaneMachinePool, provisioninginput.WorkerMachinePool}
 
 	nodeRolesStandard[0].MachinePoolConfig.Quantity = 3
@@ -85,22 +88,21 @@ func TestPSACT(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		machinePools []provisioninginput.MachinePools
-		psact        provisioninginput.PSACT
 		client       *rancher.Client
+		machinePools []provisioninginput.MachinePools
+		isWindows    bool
 	}{
-		{"RKE2_Rancher_Privileged|3_etcd|2_cp|3_worker", nodeRolesStandard, "rancher-privileged", r.client},
-		{"RKE2_Rancher_Restricted|3_etcd|2_cp|3_worker", nodeRolesStandard, "rancher-restricted", r.client},
-		{"RKE2_Rancher_Baseline|3_etcd|2_cp|3_worker", nodeRolesStandard, "rancher-baseline", r.client},
+		{"RKE2_Custom|etcd_cp_worker", r.standardUserClient, nodeRolesAll, false},
+		{"RKE2_Custom|etcd_cp|worker", r.standardUserClient, nodeRolesShared, false},
+		{"RKE2_Custom|etcd|cp|worker", r.standardUserClient, nodeRolesDedicated, false},
+		{"RKE2_Custom|etcd|cp|worker|windows", r.standardUserClient, nodeRolesDedicatedWindows, true},
+		{"RKE2_Custom|3_etcd|2_cp|3_worker", r.standardUserClient, nodeRolesStandard, false},
 	}
-
 	for _, tt := range tests {
-		var err error
 		clusterConfig := new(clusters.ClusterConfig)
 		operations.LoadObjectFromMap(defaults.ClusterConfigKey, r.cattleConfig, clusterConfig)
 
 		clusterConfig.MachinePools = tt.machinePools
-		clusterConfig.PSACT = string(tt.psact)
 
 		t.Cleanup(func() {
 			logrus.Info("Running cleanup")
@@ -110,19 +112,25 @@ func TestPSACT(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			provider := provisioning.CreateProvider(clusterConfig.Provider)
-			credentialSpec := cloudcredentials.LoadCloudCredential(string(provider.Name))
-			machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
+			externalNodeProvider := provisioning.ExternalNodeProviderSetup(clusterConfig.NodeProvider)
 
-			cluster, err := provisioning.CreateProvisioningCluster(tt.client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)
+			awsEC2Configs := new(ec2.AWSEC2Configs)
+			operations.LoadObjectFromMap(ec2.ConfigurationFileKey, r.cattleConfig, awsEC2Configs)
+			if tt.isWindows {
+				windowsMachineConfigs := externalNodeProvider.GetWindowsPoolsFunc(tt.client, *awsEC2Configs)
+				if len(windowsMachineConfigs) == 0 {
+					t.Skip("Windows test requires a windows machine pool")
+				}
+			}
+
+			clusterObject, err := provisioning.CreateProvisioningCustomCluster(tt.client, &externalNodeProvider, clusterConfig, awsEC2Configs)
 			assert.NoError(t, err)
 
-			logrus.Infof("Verifying cluster (%s)", cluster.Name)
-			provisioning.VerifyCluster(t, tt.client, clusterConfig, cluster)
+			provisioning.VerifyCluster(t, tt.client, clusterConfig, clusterObject)
 		})
 
-		params := provisioning.GetProvisioningSchemaParams(tt.client, r.cattleConfig)
-		err = qase.UpdateSchemaParameters(tt.name, params)
+		params := provisioning.GetCustomSchemaParams(tt.client, r.cattleConfig)
+		err := qase.UpdateSchemaParameters(tt.name, params)
 		if err != nil {
 			logrus.Warningf("Failed to upload schema parameters %s", err)
 		}

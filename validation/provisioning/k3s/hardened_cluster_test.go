@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
 	"github.com/rancher/shepherd/clients/rancher/catalog"
 	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
@@ -115,7 +116,10 @@ func (c *HardenedK3SClusterProvisioningTestSuite) TestProvisioningK3SHardenedClu
 
 				externalNodeProvider := provisioning.ExternalNodeProviderSetup(clusterConfig.NodeProvider)
 
-				clusterObject, err := provisioning.CreateProvisioningCustomCluster(tt.client, &externalNodeProvider, clusterConfig)
+				awsEC2Configs := new(ec2.AWSEC2Configs)
+				operations.LoadObjectFromMap(ec2.ConfigurationFileKey, cattleConfig, awsEC2Configs)
+
+				clusterObject, err := provisioning.CreateProvisioningCustomCluster(tt.client, &externalNodeProvider, clusterConfig, awsEC2Configs)
 				reports.TimeoutClusterReport(clusterObject, err)
 				require.NoError(c.T(), err)
 

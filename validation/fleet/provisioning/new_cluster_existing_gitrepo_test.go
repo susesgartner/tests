@@ -7,6 +7,7 @@ import (
 
 	"github.com/rancher/fleet/pkg/apis/fleet.cattle.io/v1alpha1"
 	provv1 "github.com/rancher/rancher/pkg/apis/provisioning.cattle.io/v1"
+	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
 	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
 	steveV1 "github.com/rancher/shepherd/clients/rancher/v1"
@@ -171,7 +172,10 @@ func (f *FleetWithProvisioningTestSuite) TestHardenedAfterAddedGitRepo() {
 			testClusterConfig.CNI = f.provisioningConfig.CNIs[0]
 			testClusterConfig.EnableNetworkPolicy = true
 
-			clusterObject, err := provisioning.CreateProvisioningCustomCluster(tt.client, customProvider, testClusterConfig)
+			awsEC2Configs := new(ec2.AWSEC2Configs)
+			config.LoadConfig(ec2.ConfigurationFileKey, awsEC2Configs)
+
+			clusterObject, err := provisioning.CreateProvisioningCustomCluster(tt.client, customProvider, testClusterConfig, awsEC2Configs)
 			require.NoError(f.T(), err)
 
 			reports.TimeoutClusterReport(clusterObject, err)
@@ -255,7 +259,10 @@ func (f *FleetWithProvisioningTestSuite) TestWindowsAfterAddedGitRepo() {
 			testClusterConfig.CNI = f.provisioningConfig.CNIs[0]
 			testClusterConfig.EnableNetworkPolicy = true
 
-			clusterObject, err := provisioning.CreateProvisioningCustomCluster(tt.client, customProvider, testClusterConfig)
+			awsEC2Configs := new(ec2.AWSEC2Configs)
+			config.LoadConfig(ec2.ConfigurationFileKey, awsEC2Configs)
+
+			clusterObject, err := provisioning.CreateProvisioningCustomCluster(tt.client, customProvider, testClusterConfig, awsEC2Configs)
 			require.NoError(f.T(), err)
 
 			reports.TimeoutClusterReport(clusterObject, err)

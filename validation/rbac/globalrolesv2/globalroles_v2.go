@@ -3,11 +3,13 @@ package globalrolesv2
 import (
 	"context"
 	"fmt"
+
 	v3 "github.com/rancher/rancher/pkg/apis/management.cattle.io/v3"
 
 	"github.com/rancher/shepherd/pkg/config"
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
 
+	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
 	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
 	v1 "github.com/rancher/shepherd/clients/rancher/v1"
@@ -102,7 +104,10 @@ func createDownstreamCluster(client *rancher.Client, clusterType string) (*manag
 		}
 		testClusterConfig.MachinePools = nodeAndRoles
 		testClusterConfig.KubernetesVersion = provisioningConfig.RKE2KubernetesVersions[0]
-		steveObject, err = provisioning.CreateProvisioningCustomCluster(client, &externalNodeProvider, testClusterConfig)
+
+		awsEC2Configs := new(ec2.AWSEC2Configs)
+		config.LoadConfig(ec2.ConfigurationFileKey, awsEC2Configs)
+		steveObject, err = provisioning.CreateProvisioningCustomCluster(client, &externalNodeProvider, testClusterConfig, awsEC2Configs)
 	default:
 		return nil, nil, nil, fmt.Errorf("unsupported cluster type: %s", clusterType)
 	}

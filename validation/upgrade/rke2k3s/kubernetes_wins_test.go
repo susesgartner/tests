@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	provv1 "github.com/rancher/rancher/pkg/apis/provisioning.cattle.io/v1"
+	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
 	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
@@ -60,6 +61,9 @@ func (u *UpgradeWindowsKubernetesTestSuite) SetupSuite() {
 	u.clusterConfig = new(clusters.ClusterConfig)
 	operations.LoadObjectFromMap(defaults.ClusterConfigKey, u.cattleConfig, u.clusterConfig)
 
+	awsEC2Configs := new(ec2.AWSEC2Configs)
+	operations.LoadObjectFromMap(ec2.ConfigurationFileKey, u.cattleConfig, awsEC2Configs)
+
 	nodeRolesStandard := []provisioninginput.MachinePools{
 		provisioninginput.EtcdMachinePool,
 		provisioninginput.ControlPlaneMachinePool,
@@ -74,7 +78,7 @@ func (u *UpgradeWindowsKubernetesTestSuite) SetupSuite() {
 
 	u.clusterConfig.MachinePools = nodeRolesStandard
 
-	u.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(u.T(), standardUserClient, extClusters.RKE2ClusterType.String(), u.clusterConfig, true, true)
+	u.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(u.T(), standardUserClient, extClusters.RKE2ClusterType.String(), u.clusterConfig, awsEC2Configs, true, true)
 	require.NoError(u.T(), err)
 
 	clusters, err := upgradeinput.LoadUpgradeKubernetesConfig(client)

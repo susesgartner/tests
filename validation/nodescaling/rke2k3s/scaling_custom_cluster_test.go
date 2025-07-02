@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/pkg/config"
@@ -57,6 +58,9 @@ func (s *CustomClusterNodeScalingTestSuite) SetupSuite() {
 	k3sClusterConfig := new(clusters.ClusterConfig)
 	operations.LoadObjectFromMap(defaults.ClusterConfigKey, s.cattleConfig, k3sClusterConfig)
 
+	awsEC2Configs := new(ec2.AWSEC2Configs)
+	operations.LoadObjectFromMap(ec2.ConfigurationFileKey, s.cattleConfig, awsEC2Configs)
+
 	s.scalingConfig = new(scalinginput.Config)
 	config.LoadConfig(scalinginput.ConfigurationFileKey, s.scalingConfig)
 
@@ -73,10 +77,10 @@ func (s *CustomClusterNodeScalingTestSuite) SetupSuite() {
 	rke2ClusterConfig.MachinePools = nodeRolesStandard
 	k3sClusterConfig.MachinePools = nodeRolesStandard
 
-	s.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, true, true)
+	s.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, awsEC2Configs, true, true)
 	require.NoError(s.T(), err)
 
-	s.k3sClusterID, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.K3SClusterType.String(), k3sClusterConfig, true, true)
+	s.k3sClusterID, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.K3SClusterType.String(), k3sClusterConfig, awsEC2Configs, true, true)
 	require.NoError(s.T(), err)
 }
 
@@ -125,7 +129,9 @@ func (s *CustomClusterNodeScalingTestSuite) TestScalingCustomClusterNodes() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			nodescaling.ScalingRKE2K3SCustomClusterPools(s.T(), s.client, tt.clusterID, s.scalingConfig.NodeProvider, tt.nodeRoles)
+			awsEC2Configs := new(ec2.AWSEC2Configs)
+			operations.LoadObjectFromMap(ec2.ConfigurationFileKey, s.cattleConfig, awsEC2Configs)
+			nodescaling.ScalingRKE2K3SCustomClusterPools(s.T(), s.client, tt.clusterID, s.scalingConfig.NodeProvider, tt.nodeRoles, awsEC2Configs)
 		})
 	}
 }
@@ -138,7 +144,9 @@ func (s *CustomClusterNodeScalingTestSuite) TestScalingCustomClusterNodesDynamic
 	clusterID, err := extClusters.GetV1ProvisioningClusterByName(s.client, s.client.RancherConfig.ClusterName)
 	require.NoError(s.T(), err)
 
-	nodescaling.ScalingRKE2K3SCustomClusterPools(s.T(), s.client, clusterID, s.scalingConfig.NodeProvider, *s.scalingConfig.MachinePools.NodeRoles)
+	awsEC2Configs := new(ec2.AWSEC2Configs)
+	operations.LoadObjectFromMap(ec2.ConfigurationFileKey, s.cattleConfig, awsEC2Configs)
+	nodescaling.ScalingRKE2K3SCustomClusterPools(s.T(), s.client, clusterID, s.scalingConfig.NodeProvider, *s.scalingConfig.MachinePools.NodeRoles, awsEC2Configs)
 }
 
 func TestCustomClusterNodeScalingTestSuite(t *testing.T) {

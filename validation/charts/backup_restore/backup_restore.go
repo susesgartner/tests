@@ -20,6 +20,7 @@ import (
 	"github.com/rancher/tests/actions/provisioning"
 	"github.com/rancher/tests/actions/provisioninginput"
 
+	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
 	shepCharts "github.com/rancher/shepherd/extensions/charts"
 	"github.com/rancher/shepherd/extensions/users"
@@ -297,7 +298,10 @@ func createRKE2dsCluster(t *testing.T, client *rancher.Client) (*v1.SteveAPIObje
 	}
 	testClusterConfig.MachinePools = nodeAndRoles
 	testClusterConfig.KubernetesVersion = provisioningConfig.RKE2KubernetesVersions[0]
-	steveObject, err := provisioning.CreateProvisioningCustomCluster(client, &externalNodeProvider, testClusterConfig)
+
+	awsEC2Configs := new(ec2.AWSEC2Configs)
+	config.LoadConfig(ec2.ConfigurationFileKey, awsEC2Configs)
+	steveObject, err := provisioning.CreateProvisioningCustomCluster(client, &externalNodeProvider, testClusterConfig, awsEC2Configs)
 
 	if err != nil {
 		return nil, nil, err

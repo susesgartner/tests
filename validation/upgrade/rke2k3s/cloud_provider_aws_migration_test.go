@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults/namespaces"
@@ -54,6 +55,9 @@ func (u *MigrateCloudProviderSuite) SetupSuite() {
 	u.clusterConfig = new(clusters.ClusterConfig)
 	operations.LoadObjectFromMap(defaults.ClusterConfigKey, u.cattleConfig, u.clusterConfig)
 
+	awsEC2Configs := new(ec2.AWSEC2Configs)
+	operations.LoadObjectFromMap(ec2.ConfigurationFileKey, u.cattleConfig, awsEC2Configs)
+
 	nodeRolesStandard := []provisioninginput.MachinePools{
 		provisioninginput.EtcdMachinePool,
 		provisioninginput.ControlPlaneMachinePool,
@@ -66,7 +70,7 @@ func (u *MigrateCloudProviderSuite) SetupSuite() {
 
 	u.clusterConfig.MachinePools = nodeRolesStandard
 
-	u.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(u.T(), u.standardUserClient, extClusters.RKE2ClusterType.String(), u.clusterConfig, true, false)
+	u.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(u.T(), u.standardUserClient, extClusters.RKE2ClusterType.String(), u.clusterConfig, awsEC2Configs, true, false)
 	require.NoError(u.T(), err)
 }
 
