@@ -1,4 +1,4 @@
-//go:build (validation || extended) && !infra.any && !infra.aks && !infra.eks && !infra.gke && !infra.rke2k3s && !cluster.any && !cluster.custom && !cluster.nodedriver && !sanity && !stress
+//go:build (validation || extended || recurring) && !infra.any && !infra.aks && !infra.eks && !infra.gke && !infra.rke2k3s && !cluster.any && !cluster.custom && !cluster.nodedriver && !sanity && !stress
 
 package rke2
 
@@ -25,33 +25,28 @@ import (
 	"github.com/rancher/tests/actions/qase"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 )
 
-type RKE2CloudProviderTestSuite struct {
-	suite.Suite
+type cloudProviderTest struct {
 	client             *rancher.Client
 	session            *session.Session
 	standardUserClient *rancher.Client
 	cattleConfig       map[string]any
 }
 
-func (r *RKE2CloudProviderTestSuite) TearDownSuite() {
-	r.session.Cleanup()
-}
-
-func (r *RKE2CloudProviderTestSuite) SetupSuite() {
+func cloudProviderSetup(t *testing.T) cloudProviderTest {
+	var r cloudProviderTest
 	testSession := session.NewSession()
 	r.session = testSession
 
 	r.cattleConfig = config.LoadConfigFromFile(os.Getenv(config.ConfigEnvironmentKey))
 
 	client, err := rancher.NewClient("", testSession)
-	require.NoError(r.T(), err)
+	require.NoError(t, err)
 	r.client = client
 
 	r.cattleConfig, err = defaults.SetK8sDefault(client, "rke2", r.cattleConfig)
-	require.NoError(r.T(), err)
+	require.NoError(t, err)
 
 	enabled := true
 	var testuser = namegen.AppendRandomString("testuser-")
@@ -64,17 +59,21 @@ func (r *RKE2CloudProviderTestSuite) SetupSuite() {
 	}
 
 	newUser, err := users.CreateUserWithRole(client, user, "user")
-	require.NoError(r.T(), err)
+	require.NoError(t, err)
 
 	newUser.Password = user.Password
 
 	standardUserClient, err := client.AsUser(newUser)
-	require.NoError(r.T(), err)
+	require.NoError(t, err)
 
 	r.standardUserClient = standardUserClient
+
+	return r
 }
 
-func (r *RKE2CloudProviderTestSuite) TestAWSCloudProviderCluster() {
+func TestAWSCloudProvider(t *testing.T) {
+	r := cloudProviderSetup(t)
+
 	nodeRolesDedicated := []provisioninginput.MachinePools{provisioninginput.EtcdMachinePool, provisioninginput.ControlPlaneMachinePool, provisioninginput.WorkerMachinePool}
 	nodeRolesDedicated[0].MachinePoolConfig.Quantity = 3
 	nodeRolesDedicated[1].MachinePoolConfig.Quantity = 2
@@ -92,27 +91,37 @@ func (r *RKE2CloudProviderTestSuite) TestAWSCloudProviderCluster() {
 	clusterConfig := new(clusters.ClusterConfig)
 	operations.LoadObjectFromMap(defaults.ClusterConfigKey, r.cattleConfig, clusterConfig)
 	if clusterConfig.Provider != "aws" {
-		r.T().Skip("AWS Cloud Provider test requires access to aws.")
+		t.Skip("AWS Cloud Provider test requires access to aws.")
 	}
 
 	for _, tt := range tests {
+		var err error
 		if !tt.runFlag {
-			r.T().Logf("SKIPPED")
+			t.Logf("SKIPPED")
 			continue
 		}
 
-		clusterConfig.Provider = "aws"
-		clusterConfig.MachinePools = tt.machinePools
+		t.Cleanup(func() {
+			logrus.Info("Running cleanup")
+			r.session.Cleanup()
+		})
 
-		provider := provisioning.CreateProvider(clusterConfig.Provider)
-		credentialSpec := cloudcredentials.LoadCloudCredential(string(provider.Name))
-		machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-		clusterObject, err := provisioning.CreateProvisioningCluster(tt.client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)
-		require.NoError(r.T(), err)
+			clusterConfig.Provider = "aws"
+			clusterConfig.MachinePools = tt.machinePools
 
-		provisioning.VerifyCluster(r.T(), tt.client, clusterConfig, clusterObject)
-		cloudprovider.VerifyCloudProvider(r.T(), tt.client, "rke2", nil, clusterConfig, clusterObject, nil)
+			provider := provisioning.CreateProvider(clusterConfig.Provider)
+			credentialSpec := cloudcredentials.LoadCloudCredential(string(provider.Name))
+			machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
+
+			clusterObject, err := provisioning.CreateProvisioningCluster(tt.client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)
+			require.NoError(t, err)
+
+			provisioning.VerifyCluster(t, tt.client, clusterConfig, clusterObject)
+			cloudprovider.VerifyCloudProvider(t, tt.client, "rke2", nil, clusterConfig, clusterObject, nil)
+		})
 
 		params := provisioning.GetProvisioningSchemaParams(tt.client, r.cattleConfig)
 		err = qase.UpdateSchemaParameters(tt.name, params)
@@ -122,7 +131,9 @@ func (r *RKE2CloudProviderTestSuite) TestAWSCloudProviderCluster() {
 	}
 }
 
-func (r *RKE2CloudProviderTestSuite) TestVsphereCloudProviderCluster() {
+func TestVSphereCloudProvider(t *testing.T) {
+	r := cloudProviderSetup(t)
+
 	nodeRolesDedicated := []provisioninginput.MachinePools{provisioninginput.EtcdMachinePool, provisioninginput.ControlPlaneMachinePool, provisioninginput.WorkerMachinePool}
 	nodeRolesDedicated[0].MachinePoolConfig.Quantity = 3
 	nodeRolesDedicated[1].MachinePoolConfig.Quantity = 2
@@ -140,27 +151,40 @@ func (r *RKE2CloudProviderTestSuite) TestVsphereCloudProviderCluster() {
 	clusterConfig := new(clusters.ClusterConfig)
 	operations.LoadObjectFromMap(defaults.ClusterConfigKey, r.cattleConfig, clusterConfig)
 	if clusterConfig.Provider != "vsphere" {
-		r.T().Skip("Vsphere Cloud Provider test requires access to vsphere.")
+		t.Skip("Vsphere Cloud Provider test requires access to vsphere.")
 	}
 
 	for _, tt := range tests {
+		var err error
 		if !tt.runFlag {
-			r.T().Logf("SKIPPED")
+			t.Logf("SKIPPED")
 			continue
 		}
 
-		clusterConfig.CloudProvider = "rancher-vsphere"
-		clusterConfig.MachinePools = tt.machinePools
+		t.Cleanup(func() {
+			logrus.Info("Running cleanup")
+			r.session.Cleanup()
+		})
 
-		provider := provisioning.CreateProvider(clusterConfig.Provider)
-		credentialSpec := cloudcredentials.LoadCloudCredential(string(provider.Name))
-		machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-		clusterObject, err := provisioning.CreateProvisioningCluster(tt.client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)
-		require.NoError(r.T(), err)
+			clusterConfig.CloudProvider = "rancher-vsphere"
+			clusterConfig.MachinePools = tt.machinePools
 
-		provisioning.VerifyCluster(r.T(), tt.client, clusterConfig, clusterObject)
-		cloudprovider.VerifyCloudProvider(r.T(), tt.client, "rke2", nil, clusterConfig, clusterObject, nil)
+			provider := provisioning.CreateProvider(clusterConfig.Provider)
+			credentialSpec := cloudcredentials.LoadCloudCredential(string(provider.Name))
+			machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
+
+			cluster, err := provisioning.CreateProvisioningCluster(tt.client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)
+			require.NoError(t, err)
+
+			logrus.Infof("Verifying cluster (%s)", cluster.Name)
+			provisioning.VerifyCluster(t, tt.client, clusterConfig, cluster)
+
+			logrus.Infof("Verifying cloud provider %s", cluster.Name)
+			cloudprovider.VerifyCloudProvider(t, tt.client, "rke2", nil, clusterConfig, cluster, nil)
+		})
 
 		params := provisioning.GetProvisioningSchemaParams(tt.client, r.cattleConfig)
 		err = qase.UpdateSchemaParameters(tt.name, params)
@@ -168,10 +192,4 @@ func (r *RKE2CloudProviderTestSuite) TestVsphereCloudProviderCluster() {
 			logrus.Warningf("Failed to upload schema parameters %s", err)
 		}
 	}
-}
-
-// In order for 'go test' to run this suite, we need to create
-// a normal test function and pass our suite to suite.Run
-func TestRKE2CloudProviderTestSuite(t *testing.T) {
-	suite.Run(t, new(RKE2CloudProviderTestSuite))
 }

@@ -1,4 +1,4 @@
-//go:build validation
+//go:build (validation || extended || recurring) && !infra.any && !infra.aks && !infra.eks && !infra.rke2k3s && !infra.gke && !infra.rke1 && !cluster.any && !cluster.custom && !cluster.nodedriver && !sanity && !stress
 
 package rke2
 
@@ -13,6 +13,7 @@ import (
 	password "github.com/rancher/shepherd/extensions/users/passwordgenerator"
 	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/config/operations"
+	"github.com/rancher/shepherd/pkg/environmentflag"
 	namegen "github.com/rancher/shepherd/pkg/namegenerator"
 	"github.com/rancher/shepherd/pkg/session"
 	"github.com/rancher/tests/actions/clusters"
@@ -22,30 +23,29 @@ import (
 	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/rancher/tests/actions/qase"
 	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
 )
 
-type psactTest struct {
+type nodeDriverTest struct {
 	client             *rancher.Client
 	session            *session.Session
 	standardUserClient *rancher.Client
 	cattleConfig       map[string]any
 }
 
-func psactSetup(t *testing.T) psactTest {
-	var r psactTest
+func nodeDriverSetup(t *testing.T) nodeDriverTest {
+	var r nodeDriverTest
 	testSession := session.NewSession()
 	r.session = testSession
 
-	r.cattleConfig = config.LoadConfigFromFile(os.Getenv(config.ConfigEnvironmentKey))
-
 	client, err := rancher.NewClient("", testSession)
-	require.NoError(t, err)
-
+	assert.NoError(t, err)
 	r.client = client
 
-	r.cattleConfig, err = defaults.SetK8sDefault(client, "rke2", r.cattleConfig)
-	require.NoError(t, err)
+	r.cattleConfig = config.LoadConfigFromFile(os.Getenv(config.ConfigEnvironmentKey))
+
+	r.cattleConfig, err = defaults.SetK8sDefault(r.client, "rke2", r.cattleConfig)
+	assert.NoError(t, err)
 
 	enabled := true
 	var testuser = namegen.AppendRandomString("testuser-")
@@ -58,20 +58,25 @@ func psactSetup(t *testing.T) psactTest {
 	}
 
 	newUser, err := users.CreateUserWithRole(client, user, "user")
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	newUser.Password = user.Password
 
 	standardUserClient, err := client.AsUser(newUser)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	r.standardUserClient = standardUserClient
 
 	return r
 }
 
-func TestPSACT(t *testing.T) {
-	r := psactSetup(t)
+func TestNodeDriver(t *testing.T) {
+	r := nodeDriverSetup(t)
+
+	nodeRolesAll := []provisioninginput.MachinePools{provisioninginput.AllRolesMachinePool}
+	nodeRolesShared := []provisioninginput.MachinePools{provisioninginput.EtcdControlPlaneMachinePool, provisioninginput.WorkerMachinePool}
+	nodeRolesDedicated := []provisioninginput.MachinePools{provisioninginput.EtcdMachinePool, provisioninginput.ControlPlaneMachinePool, provisioninginput.WorkerMachinePool}
+	nodeRolesWindows := []provisioninginput.MachinePools{provisioninginput.EtcdMachinePool, provisioninginput.ControlPlaneMachinePool, provisioninginput.WorkerMachinePool, provisioninginput.WindowsMachinePool}
 	nodeRolesStandard := []provisioninginput.MachinePools{provisioninginput.EtcdMachinePool, provisioninginput.ControlPlaneMachinePool, provisioninginput.WorkerMachinePool}
 
 	nodeRolesStandard[0].MachinePoolConfig.Quantity = 3
@@ -81,21 +86,23 @@ func TestPSACT(t *testing.T) {
 	tests := []struct {
 		name         string
 		machinePools []provisioninginput.MachinePools
-		psact        provisioninginput.PSACT
 		client       *rancher.Client
+		isWindows    bool
+		runFlag      bool
 	}{
-		{"RKE2_Rancher_Privileged|3_etcd|2_cp|3_worker", nodeRolesStandard, "rancher-privileged", r.client},
-		{"RKE2_Rancher_Restricted|3_etcd|2_cp|3_worker", nodeRolesStandard, "rancher-restricted", r.client},
-		{"RKE2_Rancher_Baseline|3_etcd|2_cp|3_worker", nodeRolesStandard, "rancher-baseline", r.client},
+		{"RKE2_Node_Driver|etcd_cp_worker", nodeRolesAll, r.standardUserClient, false, r.client.Flags.GetValue(environmentflag.Short) || r.client.Flags.GetValue(environmentflag.Long)},
+		{"RKE2_Node_Driver|etcd_cp|worker", nodeRolesShared, r.standardUserClient, false, r.client.Flags.GetValue(environmentflag.Short) || r.client.Flags.GetValue(environmentflag.Long)},
+		{"RKE2_Node_Driver|etcd|cp|worker", nodeRolesDedicated, r.standardUserClient, false, r.client.Flags.GetValue(environmentflag.Long)},
+		{"RKE2_Node_Driver|etcd|cp|worker|windows", nodeRolesWindows, r.standardUserClient, true, r.client.Flags.GetValue(environmentflag.Long)},
+		{"RKE2_Node_Driver|3_etcd|2_cp|3_worker", nodeRolesStandard, r.standardUserClient, false, r.client.Flags.GetValue(environmentflag.Long)},
 	}
 
 	for _, tt := range tests {
 		var err error
-		clusterConfig := new(clusters.ClusterConfig)
-		operations.LoadObjectFromMap(defaults.ClusterConfigKey, r.cattleConfig, clusterConfig)
-
-		clusterConfig.MachinePools = tt.machinePools
-		clusterConfig.PSACT = string(tt.psact)
+		if !tt.runFlag {
+			t.Logf("SKIPPED")
+			continue
+		}
 
 		t.Cleanup(func() {
 			logrus.Info("Running cleanup")
@@ -105,12 +112,21 @@ func TestPSACT(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
+			clusterConfig := new(clusters.ClusterConfig)
+			operations.LoadObjectFromMap(defaults.ClusterConfigKey, r.cattleConfig, clusterConfig)
+			clusterConfig.MachinePools = tt.machinePools
+
+			assert.NotNil(t, clusterConfig.Provider)
+			if clusterConfig.Provider != "vsphere" && tt.isWindows {
+				t.Skip("Windows test requires access to vsphere")
+			}
+
 			provider := provisioning.CreateProvider(clusterConfig.Provider)
 			credentialSpec := cloudcredentials.LoadCloudCredential(string(provider.Name))
 			machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
 
 			cluster, err := provisioning.CreateProvisioningCluster(tt.client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 
 			logrus.Infof("Verifying cluster (%s)", cluster.Name)
 			provisioning.VerifyCluster(t, tt.client, clusterConfig, cluster)

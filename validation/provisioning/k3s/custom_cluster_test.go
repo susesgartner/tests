@@ -23,6 +23,7 @@ import (
 	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/rancher/tests/actions/qase"
 	"github.com/rancher/tests/actions/reports"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -125,11 +126,11 @@ func (c *CustomClusterProvisioningTestSuite) TestProvisioningK3SCustomCluster() 
 			})
 		}
 
-		params, err := provisioning.GetCustomSchemaParams(tt.client, c.cattleConfigs[0])
-		require.NoError(c.T(), err)
-
-		err = qase.UpdateSchemaParameters(tt.name, params)
-		require.NoError(c.T(), err)
+		params := provisioning.GetCustomSchemaParams(tt.client, c.cattleConfigs[0])
+		err := qase.UpdateSchemaParameters(tt.name, params)
+		if err != nil {
+			logrus.Warningf("Failed to upload schema parameters %s", err)
+		}
 	}
 }
 

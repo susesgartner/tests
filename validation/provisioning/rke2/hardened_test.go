@@ -1,4 +1,4 @@
-//go:build (validation || sanity) && !infra.any && !infra.aks && !infra.eks && !infra.rke2k3s && !infra.gke && !infra.rke1 && !cluster.any && !cluster.custom && !cluster.nodedriver && !extended && !stress
+//go:build (validation || sanity || recurring) && !infra.any && !infra.aks && !infra.eks && !infra.rke2k3s && !infra.gke && !infra.rke1 && !cluster.any && !cluster.custom && !cluster.nodedriver && !extended && !stress
 
 package rke2
 
@@ -25,12 +25,11 @@ import (
 	"github.com/rancher/tests/actions/qase"
 	"github.com/rancher/tests/actions/reports"
 	cis "github.com/rancher/tests/validation/provisioning/resources/cisbenchmark"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
 )
 
-type HardenedRKE2ClusterProvisioningTestSuite struct {
-	suite.Suite
+type hardenedTest struct {
 	client              *rancher.Client
 	session             *session.Session
 	standardUserClient  *rancher.Client
@@ -39,23 +38,20 @@ type HardenedRKE2ClusterProvisioningTestSuite struct {
 	chartInstallOptions *charts.InstallOptions
 }
 
-func (c *HardenedRKE2ClusterProvisioningTestSuite) TearDownSuite() {
-	c.session.Cleanup()
-}
-
-func (c *HardenedRKE2ClusterProvisioningTestSuite) SetupSuite() {
+func hardenedSetup(t *testing.T) hardenedTest {
+	var r hardenedTest
 	testSession := session.NewSession()
-	c.session = testSession
+	r.session = testSession
 
-	c.cattleConfig = config.LoadConfigFromFile(os.Getenv(config.ConfigEnvironmentKey))
+	r.cattleConfig = config.LoadConfigFromFile(os.Getenv(config.ConfigEnvironmentKey))
 
 	client, err := rancher.NewClient("", testSession)
-	require.NoError(c.T(), err)
+	require.NoError(t, err)
 
-	c.client = client
+	r.client = client
 
-	c.cattleConfig, err = defaults.SetK8sDefault(client, "rke2", c.cattleConfig)
-	require.NoError(c.T(), err)
+	r.cattleConfig, err = defaults.SetK8sDefault(client, "rke2", r.cattleConfig)
+	require.NoError(t, err)
 
 	enabled := true
 	var testuser = namegen.AppendRandomString("testuser-")
@@ -68,17 +64,20 @@ func (c *HardenedRKE2ClusterProvisioningTestSuite) SetupSuite() {
 	}
 
 	newUser, err := users.CreateUserWithRole(client, user, "user")
-	require.NoError(c.T(), err)
+	require.NoError(t, err)
 
 	newUser.Password = user.Password
 
 	standardUserClient, err := client.AsUser(newUser)
-	require.NoError(c.T(), err)
+	require.NoError(t, err)
 
-	c.standardUserClient = standardUserClient
+	r.standardUserClient = standardUserClient
+
+	return r
 }
 
-func (c *HardenedRKE2ClusterProvisioningTestSuite) TestProvisioningRKE2HardenedCluster() {
+func TestHardened(t *testing.T) {
+	r := hardenedSetup(t)
 	nodeRolesStandard := []provisioninginput.MachinePools{provisioninginput.EtcdMachinePool, provisioninginput.ControlPlaneMachinePool, provisioninginput.WorkerMachinePool}
 
 	nodeRolesStandard[0].MachinePoolConfig.Quantity = 3
@@ -91,14 +90,20 @@ func (c *HardenedRKE2ClusterProvisioningTestSuite) TestProvisioningRKE2HardenedC
 		machinePools    []provisioninginput.MachinePools
 		scanProfileName string
 	}{
-		{"RKE2_CIS_1.9_Profile|3_etcd|2_cp|3_worker", c.client, nodeRolesStandard, "rke2-cis-1.9-profile"},
+		{"RKE2_CIS_1.9_Profile|3_etcd|2_cp|3_worker", r.client, nodeRolesStandard, "rke2-cis-1.9-profile"},
 	}
 
 	for _, tt := range tests {
-		c.Run(tt.name, func() {
+		t.Cleanup(func() {
+			logrus.Info("Running cleanup")
+			r.session.Cleanup()
+		})
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
 			clusterConfig := new(clusters.ClusterConfig)
-			operations.LoadObjectFromMap(defaults.ClusterConfigKey, c.cattleConfig, clusterConfig)
+			operations.LoadObjectFromMap(defaults.ClusterConfigKey, r.cattleConfig, clusterConfig)
 			clusterConfig.MachinePools = tt.machinePools
 			clusterConfig.Hardened = true
 
@@ -106,44 +111,38 @@ func (c *HardenedRKE2ClusterProvisioningTestSuite) TestProvisioningRKE2HardenedC
 
 			clusterObject, err := provisioning.CreateProvisioningCustomCluster(tt.client, &externalNodeProvider, clusterConfig)
 			reports.TimeoutClusterReport(clusterObject, err)
-			require.NoError(c.T(), err)
+			require.NoError(t, err)
 
-			provisioning.VerifyCluster(c.T(), tt.client, clusterConfig, clusterObject)
+			provisioning.VerifyCluster(t, tt.client, clusterConfig, clusterObject)
 
 			cluster, err := extensionscluster.NewClusterMeta(tt.client, clusterObject.Name)
 			reports.TimeoutClusterReport(clusterObject, err)
-			require.NoError(c.T(), err)
+			require.NoError(t, err)
 
 			latestCISBenchmarkVersion, err := tt.client.Catalog.GetLatestChartVersion(charts.CISBenchmarkName, catalog.RancherChartRepo)
-			require.NoError(c.T(), err)
+			require.NoError(t, err)
 
 			project, err := projects.GetProjectByName(tt.client, cluster.ID, cis.System)
 			reports.TimeoutClusterReport(clusterObject, err)
-			require.NoError(c.T(), err)
+			require.NoError(t, err)
 
-			c.project = project
-			require.NotEmpty(c.T(), c.project)
+			r.project = project
+			require.NotEmpty(t, r.project)
 
-			c.chartInstallOptions = &charts.InstallOptions{
+			r.chartInstallOptions = &charts.InstallOptions{
 				Cluster:   cluster,
 				Version:   latestCISBenchmarkVersion,
-				ProjectID: c.project.ID,
+				ProjectID: r.project.ID,
 			}
 
-			cis.SetupCISBenchmarkChart(tt.client, c.project.ClusterID, c.chartInstallOptions, charts.CISBenchmarkNamespace)
-			cis.RunCISScan(tt.client, c.project.ClusterID, tt.scanProfileName)
+			cis.SetupCISBenchmarkChart(tt.client, r.project.ClusterID, r.chartInstallOptions, charts.CISBenchmarkNamespace)
+			cis.RunCISScan(tt.client, r.project.ClusterID, tt.scanProfileName)
 		})
 
-		params, err := provisioning.GetCustomSchemaParams(tt.client, c.cattleConfig)
-		require.NoError(c.T(), err)
-
-		err = qase.UpdateSchemaParameters(tt.name, params)
-		require.NoError(c.T(), err)
+		params := provisioning.GetCustomSchemaParams(tt.client, r.cattleConfig)
+		err := qase.UpdateSchemaParameters(tt.name, params)
+		if err != nil {
+			logrus.Warningf("Failed to upload schema parameters %s", err)
+		}
 	}
-}
-
-// In order for 'go test' to run this suite, we need to create
-// a normal test function and pass our suite to suite.Run
-func TestHardenedRKE2ClusterProvisioningTestSuite(t *testing.T) {
-	suite.Run(t, new(HardenedRKE2ClusterProvisioningTestSuite))
 }
