@@ -12,8 +12,8 @@ import (
 
 	"github.com/antihax/optional"
 	"github.com/rancher/shepherd/extensions/defaults"
-	qasedefaults "github.com/rancher/tests/validation/pipeline/qase"
-	"github.com/rancher/tests/validation/pipeline/qase/testcase"
+	qaseactions "github.com/rancher/tests/actions/qase"
+	"github.com/rancher/tests/actions/qase/testresult"
 	"github.com/rancher/tests/validation/pipeline/slack"
 	"github.com/sirupsen/logrus"
 	qase "go.qase.io/client"
@@ -37,8 +37,8 @@ const (
 var (
 	multiSubTestReg = regexp.MustCompile(multiSubTestPattern)
 	subTestReg      = regexp.MustCompile(subtestPattern)
-	qaseToken       = os.Getenv(qasedefaults.QaseTokenEnvVar)
-	runIDEnvVar     = os.Getenv(qasedefaults.TestRunEnvVar)
+	qaseToken       = os.Getenv(qaseactions.QaseTokenEnvVar)
+	runIDEnvVar     = os.Getenv(qaseactions.TestRunEnvVar)
 )
 
 func main() {
@@ -89,7 +89,7 @@ func getAllAutomationTestCases(client *qase.APIClient) (map[string]qase.TestCase
 		localVarOptionals := &qase.CasesApiGetCasesOpts{
 			Offset: offset,
 		}
-		tempResult, _, err := client.CasesApi.GetCases(context.TODO(), qasedefaults.RancherManagerProjectID, localVarOptionals)
+		tempResult, _, err := client.CasesApi.GetCases(context.TODO(), qaseactions.RancherManagerProjectID, localVarOptionals)
 		if err != nil {
 			return nil, err
 		}
@@ -112,16 +112,16 @@ func getAllAutomationTestCases(client *qase.APIClient) (map[string]qase.TestCase
 	return testCaseNameMap, nil
 }
 
-func readTestCase() ([]testcase.GoTestOutput, error) {
+func readTestCase() ([]testresult.GoTestOutput, error) {
 	file, err := os.Open(testResultsJSON)
 	if err != nil {
 		return nil, err
 	}
 
 	fscanner := bufio.NewScanner(file)
-	testCases := []testcase.GoTestOutput{}
+	testCases := []testresult.GoTestOutput{}
 	for fscanner.Scan() {
-		var testCase testcase.GoTestOutput
+		var testCase testresult.GoTestOutput
 		err = yaml.Unmarshal(fscanner.Bytes(), &testCase)
 		if err != nil {
 			return nil, err
@@ -132,30 +132,30 @@ func readTestCase() ([]testcase.GoTestOutput, error) {
 	return testCases, nil
 }
 
-func parseCorrectTestCases(testCases []testcase.GoTestOutput) map[string]*testcase.GoTestCase {
-	finalTestCases := map[string]*testcase.GoTestCase{}
+func parseCorrectTestCases(testCases []testresult.GoTestOutput) map[string]*testresult.GoTestResult {
+	finalTestCases := map[string]*testresult.GoTestResult{}
 	var deletedTest string
 	var timeoutFailure bool
 	for _, testCase := range testCases {
 		if testCase.Action == "run" && strings.Contains(testCase.Test, "/") {
-			newTestCase := &testcase.GoTestCase{Name: testCase.Test}
-			finalTestCases[testCase.Test] = newTestCase
+			newTestResult := &testresult.GoTestResult{Name: testCase.Test}
+			finalTestCases[testCase.Test] = newTestResult
 		} else if testCase.Action == "output" && strings.Contains(testCase.Test, "/") {
-			goTestCase := finalTestCases[testCase.Test]
-			goTestCase.StackTrace += testCase.Output
+			goTestResult := finalTestCases[testCase.Test]
+			goTestResult.StackTrace += testCase.Output
 		} else if testCase.Action == skipStatus {
 			delete(finalTestCases, testCase.Test)
 		} else if (testCase.Action == failStatus || testCase.Action == passStatus) && strings.Contains(testCase.Test, "/") {
-			goTestCase := finalTestCases[testCase.Test]
+			goTestResult := finalTestCases[testCase.Test]
 
-			if goTestCase != nil {
-				substring := subTestReg.FindString(goTestCase.Name)
-				goTestCase.StackTrace += testCase.Output
-				goTestCase.Status = testCase.Action
-				goTestCase.Elapsed = testCase.Elapsed
+			if goTestResult != nil {
+				substring := subTestReg.FindString(goTestResult.Name)
+				goTestResult.StackTrace += testCase.Output
+				goTestResult.Status = testCase.Action
+				goTestResult.Elapsed = testCase.Elapsed
 
-				if multiSubTestReg.MatchString(goTestCase.Name) && substring != deletedTest {
-					deletedTest = subTestReg.FindString(goTestCase.Name)
+				if multiSubTestReg.MatchString(goTestResult.Name) && substring != deletedTest {
+					deletedTest = subTestReg.FindString(goTestResult.Name)
 					delete(finalTestCases, deletedTest)
 				}
 
@@ -184,43 +184,43 @@ func reportTestQases(client *qase.APIClient, testRunID int64) (int, error) {
 		return 0, err
 	}
 
-	goTestCases := parseCorrectTestCases(tempTestCases)
+	goTestResults := parseCorrectTestCases(tempTestCases)
 
 	qaseTestCases, err := getAllAutomationTestCases(client)
 	if err != nil {
 		return 0, err
 	}
 
-	resultTestMap := []*testcase.GoTestCase{}
-	for _, goTestCase := range goTestCases {
-		if testQase, ok := qaseTestCases[goTestCase.Name]; ok {
+	resultTestMap := []*testresult.GoTestResult{}
+	for _, goTestResult := range goTestResults {
+		if testQase, ok := qaseTestCases[goTestResult.Name]; ok {
 			// update test status
-			httpCode, err := updateTestInRun(client, *goTestCase, testQase.Id, testRunID)
+			httpCode, err := updateTestInRun(client, *goTestResult, testQase.Id, testRunID)
 			if err != nil {
 				return httpCode, err
 			}
 
-			if goTestCase.Status == failStatus {
-				resultTestMap = append(resultTestMap, goTestCase)
+			if goTestResult.Status == failStatus {
+				resultTestMap = append(resultTestMap, goTestResult)
 			}
 		} else {
 			// write test case
-			caseID, err := writeTestCaseToQase(client, *goTestCase)
+			caseID, err := writeTestCaseToQase(client, *goTestResult)
 			if err != nil {
 				return 0, err
 			}
 
-			httpCode, err := updateTestInRun(client, *goTestCase, caseID.Result.Id, testRunID)
+			httpCode, err := updateTestInRun(client, *goTestResult, caseID.Result.Id, testRunID)
 			if err != nil {
 				return httpCode, err
 			}
 
-			if goTestCase.Status == failStatus {
-				resultTestMap = append(resultTestMap, goTestCase)
+			if goTestResult.Status == failStatus {
+				resultTestMap = append(resultTestMap, goTestResult)
 			}
 		}
 	}
-	resp, httpResponse, err := client.RunsApi.GetRun(context.TODO(), qasedefaults.RancherManagerProjectID, int32(testRunID))
+	resp, httpResponse, err := client.RunsApi.GetRun(context.TODO(), qaseactions.RancherManagerProjectID, int32(testRunID))
 	if err != nil {
 		var statusCode int
 		if httpResponse != nil {
@@ -235,15 +235,15 @@ func reportTestQases(client *qase.APIClient, testRunID int64) (int, error) {
 	return http.StatusOK, nil
 }
 
-func writeTestSuiteToQase(client *qase.APIClient, testCase testcase.GoTestCase) (*int64, error) {
+func writeTestSuiteToQase(client *qase.APIClient, testResult testresult.GoTestResult) (*int64, error) {
 	parentSuite := int64(automationSuiteID)
 	var id int64
-	for _, suiteGo := range testCase.TestSuite {
+	for _, suiteGo := range testResult.TestSuite {
 		localVarOptionals := &qase.SuitesApiGetSuitesOpts{
 			FiltersSearch: optional.NewString(suiteGo),
 		}
 
-		qaseSuites, _, err := client.SuitesApi.GetSuites(context.TODO(), qasedefaults.RancherManagerProjectID, localVarOptionals)
+		qaseSuites, _, err := client.SuitesApi.GetSuites(context.TODO(), qaseactions.RancherManagerProjectID, localVarOptionals)
 		if err != nil {
 			return nil, err
 		}
@@ -261,7 +261,7 @@ func writeTestSuiteToQase(client *qase.APIClient, testCase testcase.GoTestCase) 
 				Title:    suiteGo,
 				ParentId: int64(parentSuite),
 			}
-			idResponse, _, err := client.SuitesApi.CreateSuite(context.TODO(), suiteBody, qasedefaults.RancherManagerProjectID)
+			idResponse, _, err := client.SuitesApi.CreateSuite(context.TODO(), suiteBody, qaseactions.RancherManagerProjectID)
 			if err != nil {
 				return nil, err
 			}
@@ -275,14 +275,14 @@ func writeTestSuiteToQase(client *qase.APIClient, testCase testcase.GoTestCase) 
 	return &id, nil
 }
 
-func writeTestCaseToQase(client *qase.APIClient, testCase testcase.GoTestCase) (*qase.IdResponse, error) {
-	testSuiteID, err := writeTestSuiteToQase(client, testCase)
+func writeTestCaseToQase(client *qase.APIClient, testResult testresult.GoTestResult) (*qase.IdResponse, error) {
+	testSuiteID, err := writeTestSuiteToQase(client, testResult)
 	if err != nil {
 		return nil, err
 	}
 
 	testQaseBody := qase.TestCaseCreate{
-		Title:      testCase.Name,
+		Title:      testResult.Name,
 		SuiteId:    *testSuiteID,
 		IsFlaky:    int32(0),
 		Automation: int32(2),
@@ -290,19 +290,19 @@ func writeTestCaseToQase(client *qase.APIClient, testCase testcase.GoTestCase) (
 			fmt.Sprintf("%d", testSourceID): testSource,
 		},
 	}
-	caseID, _, err := client.CasesApi.CreateCase(context.TODO(), testQaseBody, qasedefaults.RancherManagerProjectID)
+	caseID, _, err := client.CasesApi.CreateCase(context.TODO(), testQaseBody, qaseactions.RancherManagerProjectID)
 	if err != nil {
 		return nil, err
 	}
 	return &caseID, err
 }
 
-func updateTestInRun(client *qase.APIClient, testCase testcase.GoTestCase, qaseTestCaseID, testRunID int64) (int, error) {
-	status := fmt.Sprintf("%sed", testCase.Status)
+func updateTestInRun(client *qase.APIClient, testResult testresult.GoTestResult, qaseTestCaseID, testRunID int64) (int, error) {
+	status := fmt.Sprintf("%sed", testResult.Status)
 	var elapsedTime float64
-	if testCase.Elapsed != "" {
+	if testResult.Elapsed != "" {
 		var err error
-		elapsedTime, err = strconv.ParseFloat(testCase.Elapsed, 64)
+		elapsedTime, err = strconv.ParseFloat(testResult.Elapsed, 64)
 		if err != nil {
 			return 0, err
 		}
@@ -311,11 +311,11 @@ func updateTestInRun(client *qase.APIClient, testCase testcase.GoTestCase, qaseT
 	resultBody := qase.ResultCreate{
 		CaseId:  qaseTestCaseID,
 		Status:  status,
-		Comment: testCase.StackTrace,
+		Comment: testResult.StackTrace,
 		Time:    int64(elapsedTime),
 	}
 
-	_, resp, err := client.ResultsApi.CreateResult(context.TODO(), resultBody, qasedefaults.RancherManagerProjectID, testRunID)
+	_, resp, err := client.ResultsApi.CreateResult(context.TODO(), resultBody, qaseactions.RancherManagerProjectID, testRunID)
 	if err != nil {
 		if resp != nil {
 			return resp.StatusCode, err

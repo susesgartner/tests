@@ -24,8 +24,10 @@ import (
 	"github.com/rancher/tests/actions/projects"
 	"github.com/rancher/tests/actions/provisioning"
 	"github.com/rancher/tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/qase"
 	"github.com/rancher/tests/actions/reports"
 	cis "github.com/rancher/tests/validation/provisioning/resources/cisbenchmark"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -99,7 +101,7 @@ func (c *HardenedK3SClusterProvisioningTestSuite) TestProvisioningK3SHardenedClu
 		machinePools    []provisioninginput.MachinePools
 		scanProfileName string
 	}{
-		{"CIS 1.9 Profile " + provisioninginput.StandardClientName.String(), c.standardUserClient, nodeRolesStandard, "k3s-cis-1.9-profile"},
+		{"K3S_CIS_1.9_Profile|3_etcd|2_cp|3_worker", c.standardUserClient, nodeRolesStandard, "k3s-cis-1.9-profile"},
 	}
 	for _, tt := range tests {
 		for _, cattleConfig := range c.cattleConfigs {
@@ -142,6 +144,12 @@ func (c *HardenedK3SClusterProvisioningTestSuite) TestProvisioningK3SHardenedClu
 				cis.SetupCISBenchmarkChart(tt.client, c.project.ClusterID, c.chartInstallOptions, charts.CISBenchmarkNamespace)
 				cis.RunCISScan(tt.client, c.project.ClusterID, tt.scanProfileName)
 			})
+		}
+
+		params := provisioning.GetCustomSchemaParams(tt.client, c.cattleConfigs[0])
+		err := qase.UpdateSchemaParameters(tt.name, params)
+		if err != nil {
+			logrus.Warningf("Failed to upload schema parameters %s", err)
 		}
 	}
 }

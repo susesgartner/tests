@@ -23,6 +23,8 @@ import (
 	"github.com/rancher/tests/actions/machinepools"
 	"github.com/rancher/tests/actions/provisioning"
 	"github.com/rancher/tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/qase"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -97,10 +99,10 @@ func (k *K3SNodeDriverProvisioningTestSuite) TestProvisioningK3SCluster() {
 		client       *rancher.Client
 		runFlag      bool
 	}{
-		{"1 Node all roles " + provisioninginput.StandardClientName.String(), nodeRolesAll, k.standardUserClient, k.client.Flags.GetValue(environmentflag.Short) || k.client.Flags.GetValue(environmentflag.Long)},
-		{"2 nodes - etcd|cp roles per 1 node " + provisioninginput.StandardClientName.String(), nodeRolesShared, k.standardUserClient, k.client.Flags.GetValue(environmentflag.Short) || k.client.Flags.GetValue(environmentflag.Long)},
-		{"3 nodes - 1 role per node " + provisioninginput.StandardClientName.String(), nodeRolesDedicated, k.standardUserClient, k.client.Flags.GetValue(environmentflag.Long)},
-		{"8 nodes - 3 etcd, 2 cp, 3 worker " + provisioninginput.StandardClientName.String(), nodeRolesStandard, k.standardUserClient, k.client.Flags.GetValue(environmentflag.Long)},
+		{"K3S_Node_Driver|etcd_cp_worker", nodeRolesAll, k.standardUserClient, k.client.Flags.GetValue(environmentflag.Short) || k.client.Flags.GetValue(environmentflag.Long)},
+		{"K3S_Node_Driver|etcd_cp|worker", nodeRolesShared, k.standardUserClient, k.client.Flags.GetValue(environmentflag.Short) || k.client.Flags.GetValue(environmentflag.Long)},
+		{"K3S_Node_Driver|etcd|cp|worker", nodeRolesDedicated, k.standardUserClient, k.client.Flags.GetValue(environmentflag.Long)},
+		{"K3S_Node_Driver|3_etcd|2_cp|3_worker", nodeRolesStandard, k.standardUserClient, k.client.Flags.GetValue(environmentflag.Long)},
 	}
 
 	for _, tt := range tests {
@@ -116,8 +118,7 @@ func (k *K3SNodeDriverProvisioningTestSuite) TestProvisioningK3SCluster() {
 
 			clusterConfig.MachinePools = tt.machinePools
 
-			name := tt.name + " Node Provider: " + clusterConfig.NodeProvider + " Kubernetes version: " + clusterConfig.KubernetesVersion
-			k.Run(name, func() {
+			k.Run(tt.name, func() {
 				provider := provisioning.CreateProvider(clusterConfig.Provider)
 				credentialSpec := cloudcredentials.LoadCloudCredential(string(provider.Name))
 				machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
@@ -127,6 +128,12 @@ func (k *K3SNodeDriverProvisioningTestSuite) TestProvisioningK3SCluster() {
 
 				provisioning.VerifyCluster(k.T(), tt.client, clusterConfig, clusterObject)
 			})
+		}
+
+		params := provisioning.GetProvisioningSchemaParams(tt.client, k.cattleConfigs[0])
+		err := qase.UpdateSchemaParameters(tt.name, params)
+		if err != nil {
+			logrus.Warningf("Failed to upload schema parameters %s", err)
 		}
 	}
 }

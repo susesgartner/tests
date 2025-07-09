@@ -22,7 +22,9 @@ import (
 	"github.com/rancher/tests/actions/config/permutationdata"
 	"github.com/rancher/tests/actions/provisioning"
 	"github.com/rancher/tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/qase"
 	"github.com/rancher/tests/actions/reports"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -103,11 +105,11 @@ func (c *CustomClusterProvisioningTestSuite) TestProvisioningRKE2CustomCluster()
 		isWindows    bool
 		runFlag      bool
 	}{
-		{"1 Node all roles " + provisioninginput.StandardClientName.String(), c.standardUserClient, nodeRolesAll, false, c.client.Flags.GetValue(environmentflag.Short) || c.client.Flags.GetValue(environmentflag.Long)},
-		{"2 nodes - etcd|cp roles per 1 node " + provisioninginput.StandardClientName.String(), c.standardUserClient, nodeRolesShared, false, c.client.Flags.GetValue(environmentflag.Short) || c.client.Flags.GetValue(environmentflag.Long)},
-		{"3 nodes - 1 role per node " + provisioninginput.StandardClientName.String(), c.standardUserClient, nodeRolesDedicated, false, c.client.Flags.GetValue(environmentflag.Long)},
-		{"4 nodes - 1 role per node + 1 Windows worker " + provisioninginput.StandardClientName.String(), c.standardUserClient, nodeRolesDedicatedWindows, true, c.client.Flags.GetValue(environmentflag.Long)},
-		{"8 nodes - 3 etcd, 2 cp, 3 worker " + provisioninginput.StandardClientName.String(), c.standardUserClient, nodeRolesStandard, false, c.client.Flags.GetValue(environmentflag.Long)},
+		{"RKE2_Custom|etcd_cp_worker", c.standardUserClient, nodeRolesAll, false, c.client.Flags.GetValue(environmentflag.Short) || c.client.Flags.GetValue(environmentflag.Long)},
+		{"RKE2_Custom|etcd_cp|worker", c.standardUserClient, nodeRolesShared, false, c.client.Flags.GetValue(environmentflag.Short) || c.client.Flags.GetValue(environmentflag.Long)},
+		{"RKE2_Custom|etcd|cp|worker", c.standardUserClient, nodeRolesDedicated, false, c.client.Flags.GetValue(environmentflag.Long)},
+		{"RKE2_Custom|etcd|cp|worker|windows", c.standardUserClient, nodeRolesDedicatedWindows, true, c.client.Flags.GetValue(environmentflag.Long)},
+		{"RKE2_Custom|3_etcd|2_cp|3_worker", c.standardUserClient, nodeRolesStandard, false, c.client.Flags.GetValue(environmentflag.Long)},
 	}
 	for _, tt := range tests {
 		if !tt.runFlag {
@@ -120,9 +122,8 @@ func (c *CustomClusterProvisioningTestSuite) TestProvisioningRKE2CustomCluster()
 			operations.LoadObjectFromMap(defaults.ClusterConfigKey, cattleConfig, clusterConfig)
 
 			clusterConfig.MachinePools = tt.machinePools
-			name := tt.name + " Node Provider: " + clusterConfig.NodeProvider + " Kubernetes version: " + clusterConfig.KubernetesVersion + " cni: " + clusterConfig.CNI
 
-			c.Run(name, func() {
+			c.Run(tt.name, func() {
 				externalNodeProvider := provisioning.ExternalNodeProviderSetup(clusterConfig.NodeProvider)
 
 				clusterObject, err := provisioning.CreateProvisioningCustomCluster(tt.client, &externalNodeProvider, clusterConfig)
@@ -131,6 +132,12 @@ func (c *CustomClusterProvisioningTestSuite) TestProvisioningRKE2CustomCluster()
 
 				provisioning.VerifyCluster(c.T(), tt.client, clusterConfig, clusterObject)
 			})
+		}
+
+		params := provisioning.GetCustomSchemaParams(tt.client, c.cattleConfigs[0])
+		err := qase.UpdateSchemaParameters(tt.name, params)
+		if err != nil {
+			logrus.Warningf("Failed to upload schema parameters %s", err)
 		}
 	}
 }

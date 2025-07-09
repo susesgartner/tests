@@ -20,6 +20,8 @@ import (
 	"github.com/rancher/tests/actions/machinepools"
 	"github.com/rancher/tests/actions/provisioning"
 	"github.com/rancher/tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/qase"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -84,9 +86,9 @@ func (k *K3SPSACTTestSuite) TestK3SPSACTNodeDriverCluster() {
 		psact        provisioninginput.PSACT
 		client       *rancher.Client
 	}{
-		{"Rancher Privileged " + provisioninginput.StandardClientName.String(), nodeRolesStandard, "rancher-privileged", k.standardUserClient},
-		{"Rancher Restricted " + provisioninginput.StandardClientName.String(), nodeRolesStandard, "rancher-restricted", k.standardUserClient},
-		{"Rancher Baseline " + provisioninginput.AdminClientName.String(), nodeRolesStandard, "rancher-baseline", k.client},
+		{"K3S_Rancher_Privileged|3_etcd|2_cp|3_worker", nodeRolesStandard, "rancher-privileged", k.standardUserClient},
+		{"K3S_Rancher_Restricted|3_etcd|2_cp|3_worker", nodeRolesStandard, "rancher-restricted", k.standardUserClient},
+		{"K3S_Rancher_Baseline|3_etcd|2_cp|3_worker", nodeRolesStandard, "rancher-baseline", k.client},
 	}
 
 	for _, tt := range tests {
@@ -106,6 +108,12 @@ func (k *K3SPSACTTestSuite) TestK3SPSACTNodeDriverCluster() {
 
 			provisioning.VerifyCluster(k.T(), tt.client, clusterConfig, clusterObject)
 		})
+
+		params := provisioning.GetProvisioningSchemaParams(tt.client, k.cattleConfig)
+		err := qase.UpdateSchemaParameters(tt.name, params)
+		if err != nil {
+			logrus.Warningf("Failed to upload schema parameters %s", err)
+		}
 	}
 }
 

@@ -22,6 +22,8 @@ import (
 	"github.com/rancher/tests/actions/machinepools"
 	"github.com/rancher/tests/actions/provisioning"
 	"github.com/rancher/tests/actions/provisioninginput"
+	"github.com/rancher/tests/actions/qase"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -84,7 +86,7 @@ func (r *RKE2CloudProviderTestSuite) TestAWSCloudProviderCluster() {
 		client       *rancher.Client
 		runFlag      bool
 	}{
-		{"OutOfTree" + provisioninginput.StandardClientName.String(), nodeRolesDedicated, r.standardUserClient, r.client.Flags.GetValue(environmentflag.Long)},
+		{"AWS_OutOfTree", nodeRolesDedicated, r.standardUserClient, r.client.Flags.GetValue(environmentflag.Long)},
 	}
 
 	clusterConfig := new(clusters.ClusterConfig)
@@ -111,6 +113,12 @@ func (r *RKE2CloudProviderTestSuite) TestAWSCloudProviderCluster() {
 
 		provisioning.VerifyCluster(r.T(), tt.client, clusterConfig, clusterObject)
 		cloudprovider.VerifyCloudProvider(r.T(), tt.client, "rke2", nil, clusterConfig, clusterObject, nil)
+
+		params := provisioning.GetProvisioningSchemaParams(tt.client, r.cattleConfig)
+		err = qase.UpdateSchemaParameters(tt.name, params)
+		if err != nil {
+			logrus.Warningf("Failed to upload schema parameters %s", err)
+		}
 	}
 }
 
@@ -126,7 +134,7 @@ func (r *RKE2CloudProviderTestSuite) TestVsphereCloudProviderCluster() {
 		client       *rancher.Client
 		runFlag      bool
 	}{
-		{"OutOfTree" + provisioninginput.StandardClientName.String(), nodeRolesDedicated, r.standardUserClient, r.client.Flags.GetValue(environmentflag.Long)},
+		{"vSphere_OutOfTree", nodeRolesDedicated, r.standardUserClient, r.client.Flags.GetValue(environmentflag.Long)},
 	}
 
 	clusterConfig := new(clusters.ClusterConfig)
@@ -153,6 +161,12 @@ func (r *RKE2CloudProviderTestSuite) TestVsphereCloudProviderCluster() {
 
 		provisioning.VerifyCluster(r.T(), tt.client, clusterConfig, clusterObject)
 		cloudprovider.VerifyCloudProvider(r.T(), tt.client, "rke2", nil, clusterConfig, clusterObject, nil)
+
+		params := provisioning.GetProvisioningSchemaParams(tt.client, r.cattleConfig)
+		err = qase.UpdateSchemaParameters(tt.name, params)
+		if err != nil {
+			logrus.Warningf("Failed to upload schema parameters %s", err)
+		}
 	}
 }
 
