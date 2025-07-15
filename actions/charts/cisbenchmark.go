@@ -18,11 +18,11 @@ import (
 
 const (
 	// Namespace that cis benchmark chart is installed in
-	CISBenchmarkNamespace = "cis-operator-system"
+	CISBenchmarkNamespace = "compliance-operator-system"
 	// Name of the cis benchmark chart
-	CISBenchmarkName = "rancher-cis-benchmark"
+	CISBenchmarkName = "rancher-compliance"
 	// Name of cis benchmark crd chart
-	CISBenchmarkCRDName = "rancher-cis-benchmark-crd"
+	CISBenchmarkCRDName = "rancher-compliance-crd"
 )
 
 // InstallCISBenchmarkChart is a helper function that installs the cis-benchmark chart.

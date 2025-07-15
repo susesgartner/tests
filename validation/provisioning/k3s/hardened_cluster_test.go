@@ -101,7 +101,7 @@ func (c *HardenedK3SClusterProvisioningTestSuite) TestProvisioningK3SHardenedClu
 		machinePools    []provisioninginput.MachinePools
 		scanProfileName string
 	}{
-		{"K3S_CIS_1.9_Profile|3_etcd|2_cp|3_worker", c.standardUserClient, nodeRolesStandard, "k3s-cis-1.9-profile"},
+		{"K3S_CIS_1.9_Profile|3_etcd|2_cp|3_worker", c.client, nodeRolesStandard, "k3s-cis-1.9-profile"},
 	}
 	for _, tt := range tests {
 		for _, cattleConfig := range c.cattleConfigs {

@@ -5,6 +5,7 @@ package hostnametruncation
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/rancher/shepherd/clients/rancher"
 	"github.com/rancher/shepherd/extensions/cloudcredentials"
@@ -90,6 +91,7 @@ func (r *HostnameTruncationTestSuite) TestProvisioningRKE2ClusterTruncation() {
 				require.NoError(r.T(), err)
 
 				provisioning.VerifyCluster(r.T(), r.client, testConfig, clusterObject)
+				time.Sleep(120 * time.Second)
 				provisioning.VerifyHostnameLength(r.T(), r.client, clusterObject)
 			})
 		}

@@ -105,11 +105,11 @@ func (c *CustomClusterProvisioningTestSuite) TestProvisioningRKE2CustomCluster()
 		isWindows    bool
 		runFlag      bool
 	}{
-		{"RKE2_Custom|etcd_cp_worker", c.standardUserClient, nodeRolesAll, false, c.client.Flags.GetValue(environmentflag.Short) || c.client.Flags.GetValue(environmentflag.Long)},
-		{"RKE2_Custom|etcd_cp|worker", c.standardUserClient, nodeRolesShared, false, c.client.Flags.GetValue(environmentflag.Short) || c.client.Flags.GetValue(environmentflag.Long)},
-		{"RKE2_Custom|etcd|cp|worker", c.standardUserClient, nodeRolesDedicated, false, c.client.Flags.GetValue(environmentflag.Long)},
-		{"RKE2_Custom|etcd|cp|worker|windows", c.standardUserClient, nodeRolesDedicatedWindows, true, c.client.Flags.GetValue(environmentflag.Long)},
-		{"RKE2_Custom|3_etcd|2_cp|3_worker", c.standardUserClient, nodeRolesStandard, false, c.client.Flags.GetValue(environmentflag.Long)},
+		{"RKE2_Custom|etcd_cp_worker", c.client, nodeRolesAll, false, c.client.Flags.GetValue(environmentflag.Short) || c.client.Flags.GetValue(environmentflag.Long)},
+		{"RKE2_Custom|etcd_cp|worker", c.client, nodeRolesShared, false, c.client.Flags.GetValue(environmentflag.Short) || c.client.Flags.GetValue(environmentflag.Long)},
+		{"RKE2_Custom|etcd|cp|worker", c.client, nodeRolesDedicated, false, c.client.Flags.GetValue(environmentflag.Long)},
+		{"RKE2_Custom|etcd|cp|worker|windows", c.client, nodeRolesDedicatedWindows, true, c.client.Flags.GetValue(environmentflag.Long)},
+		{"RKE2_Custom|3_etcd|2_cp|3_worker", c.client, nodeRolesStandard, false, c.client.Flags.GetValue(environmentflag.Long)},
 	}
 	for _, tt := range tests {
 		if !tt.runFlag {

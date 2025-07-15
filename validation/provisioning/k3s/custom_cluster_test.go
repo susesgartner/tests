@@ -98,10 +98,10 @@ func (c *CustomClusterProvisioningTestSuite) TestProvisioningK3SCustomCluster() 
 		machinePools []provisioninginput.MachinePools
 		runFlag      bool
 	}{
-		{"K3S_Custom|etcd_cp_worker", c.standardUserClient, nodeRolesAll, c.client.Flags.GetValue(environmentflag.Short) || c.client.Flags.GetValue(environmentflag.Long)},
-		{"K3S_Custom|etcd_cp|worker", c.standardUserClient, nodeRolesShared, c.client.Flags.GetValue(environmentflag.Short) || c.client.Flags.GetValue(environmentflag.Long)},
-		{"K3S_Custom|etcd|cp|worker", c.standardUserClient, nodeRolesDedicated, c.client.Flags.GetValue(environmentflag.Long)},
-		{"K3S_Custom|3_etcd|2_cp|3_worker", c.standardUserClient, nodeRolesStandard, c.client.Flags.GetValue(environmentflag.Long)},
+		{"K3S_Custom|etcd_cp_worker", c.client, nodeRolesAll, c.client.Flags.GetValue(environmentflag.Short) || c.client.Flags.GetValue(environmentflag.Long)},
+		{"K3S_Custom|etcd_cp|worker", c.client, nodeRolesShared, c.client.Flags.GetValue(environmentflag.Short) || c.client.Flags.GetValue(environmentflag.Long)},
+		{"K3S_Custom|etcd|cp|worker", c.client, nodeRolesDedicated, c.client.Flags.GetValue(environmentflag.Long)},
+		{"K3S_Custom|3_etcd|2_cp|3_worker", c.client, nodeRolesStandard, c.client.Flags.GetValue(environmentflag.Long)},
 	}
 	for _, tt := range tests {
 		if !tt.runFlag {
