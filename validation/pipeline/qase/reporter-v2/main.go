@@ -181,23 +181,27 @@ func reportTestQases(qaseService *qase.Service, testRunID int64) error {
 			fullPackagePath := filepath.Join(basepath, packagePath[1])
 			qaseProjects, err := qase.GetSchemas(fullPackagePath)
 			if err != nil {
-				return err
+				logrus.Warning(err)
+				continue
 			}
 
 			qaseTestSchema, err := qase.GetTestSchema(goTestResult.Name, qaseProjects)
 			if err != nil {
-				return err
+				logrus.Warning(err)
+				continue
 			}
 
 			// update test status
-			logrus.Infof("UPDATING run with %v", testQase.Title)
+			logrus.Infof("Updating run with %v", testQase.Title)
 			err = updateTestInRun(qaseService.Client, *goTestResult, testQase, qaseTestSchema.Params, testRunID)
 			if err != nil {
-				return err
+				logrus.Warning(err)
+				continue
 			}
 		} else {
 			err = fmt.Errorf("Test case not found in qase: %s", goTestResult.Name)
 			logrus.Warning(err)
+			continue
 		}
 	}
 
