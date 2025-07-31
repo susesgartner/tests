@@ -92,7 +92,7 @@ node("vsphere-vpn-1") {
               }
             }
             stage('Run Docker Image for AWS, Azure, GCP, and Linode') {
-              if "${CUSTODIAN_YAML}" != "${linodeScript}" {
+              if ("${CUSTODIAN_YAML}" != "${linodeScript}") {
                 sh "docker run --privileged --name ${testContainer} -e CUSTODIAN_YAML=\"${CUSTODIAN_YAML}\" -e DONOTDELETE_KEYS=\"${DONOTDELETE_KEYS}\" -e USER_KEYS=\"${USER_KEYS}\" ${imageName}"
               } else {
                 sh ". ${linodeScript}"
