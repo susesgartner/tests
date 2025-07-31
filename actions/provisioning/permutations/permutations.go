@@ -4,10 +4,12 @@ import (
 	"strings"
 
 	"github.com/rancher/shepherd/clients/corral"
+	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
 	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
 	steveV1 "github.com/rancher/shepherd/clients/rancher/v1"
 	"github.com/rancher/shepherd/extensions/cloudcredentials"
+	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/session"
 	"github.com/rancher/tests/actions/cloudprovider"
 	"github.com/rancher/tests/actions/clusters"
@@ -103,7 +105,10 @@ func RunTestPermutations(s *suite.Suite, testNamePrefix string, client *rancher.
 					case RKE2CustomCluster, K3SCustomCluster:
 						testClusterConfig.KubernetesVersion = kubeVersion
 
-						clusterObject, err = provisioning.CreateProvisioningCustomCluster(client, customProvider, testClusterConfig)
+						awsEC2Configs := new(ec2.AWSEC2Configs)
+						config.LoadConfig(ec2.ConfigurationFileKey, awsEC2Configs)
+
+						clusterObject, err = provisioning.CreateProvisioningCustomCluster(client, customProvider, testClusterConfig, awsEC2Configs)
 						reports.TimeoutClusterReport(clusterObject, err)
 						require.NoError(s.T(), err)
 

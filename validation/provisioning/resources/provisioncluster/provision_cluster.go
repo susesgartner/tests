@@ -3,6 +3,7 @@ package provisioncluster
 import (
 	"testing"
 
+	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
 	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	"github.com/rancher/shepherd/extensions/cloudcredentials"
@@ -15,7 +16,7 @@ import (
 )
 
 // ProvisionRKE2K3SCluster is a helper function that provisions an RKE2/K3s cluster with specified machine pools and node roles.
-func ProvisionRKE2K3SCluster(t *testing.T, client *rancher.Client, clusterType string, clusterConfig *clusters.ClusterConfig,
+func ProvisionRKE2K3SCluster(t *testing.T, client *rancher.Client, clusterType string, clusterConfig *clusters.ClusterConfig, ec2Configs *ec2.AWSEC2Configs,
 	highestVersion, isCustomCluster bool) (string, error) {
 	var clusterObject *v1.SteveAPIObject
 	var err error
@@ -42,7 +43,7 @@ func ProvisionRKE2K3SCluster(t *testing.T, client *rancher.Client, clusterType s
 	if isCustomCluster {
 		externalNodeProvider := provisioning.ExternalNodeProviderSetup(clusterConfig.NodeProvider)
 
-		clusterObject, err = provisioning.CreateProvisioningCustomCluster(client, &externalNodeProvider, clusterConfig)
+		clusterObject, err = provisioning.CreateProvisioningCustomCluster(client, &externalNodeProvider, clusterConfig, ec2Configs)
 		require.NoError(t, err)
 
 		provisioning.VerifyCluster(t, client, clusterConfig, clusterObject)

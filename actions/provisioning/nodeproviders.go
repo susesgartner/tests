@@ -17,15 +17,17 @@ const (
 	fromConfig          = "config"
 )
 
-type NodeCreationFunc func(client *rancher.Client, rolesPerPool []string, quantityPerPool []int32) (nodes []*nodes.Node, err error)
+type NodeCreationFunc func(client *rancher.Client, rolesPerPool []string, quantityPerPool []int32, ec2Configs *rancherEc2.AWSEC2Configs) (nodes []*nodes.Node, err error)
 type NodeDeletionFunc func(client *rancher.Client, nodes []*nodes.Node) error
 type CustomOSNamesFunc func(client *rancher.Client, customConfig rancherEc2.AWSEC2Configs) ([]string, error)
+type GetCustomWindowsPools func(client *rancher.Client, customConfig rancherEc2.AWSEC2Configs) []rancherEc2.AWSEC2Config
 
 type ExternalNodeProvider struct {
-	Name             string
-	NodeCreationFunc NodeCreationFunc
-	NodeDeletionFunc NodeDeletionFunc
-	GetOSNamesFunc   CustomOSNamesFunc
+	Name                string
+	NodeCreationFunc    NodeCreationFunc
+	NodeDeletionFunc    NodeDeletionFunc
+	GetOSNamesFunc      CustomOSNamesFunc
+	GetWindowsPoolsFunc GetCustomWindowsPools
 }
 
 // ExternalNodeProviderSetup is a helper function that setups an ExternalNodeProvider object is a wrapper
@@ -34,15 +36,16 @@ func ExternalNodeProviderSetup(providerType string) ExternalNodeProvider {
 	switch providerType {
 	case ec2NodeProviderName:
 		return ExternalNodeProvider{
-			Name:             providerType,
-			NodeCreationFunc: ec2.CreateNodes,
-			NodeDeletionFunc: ec2.DeleteNodes,
-			GetOSNamesFunc:   GetAWSOSNames,
+			Name:                providerType,
+			NodeCreationFunc:    ec2.CreateNodes,
+			NodeDeletionFunc:    ec2.DeleteNodes,
+			GetOSNamesFunc:      GetAWSOSNames,
+			GetWindowsPoolsFunc: GetWindowsPools,
 		}
 	case fromConfig:
 		return ExternalNodeProvider{
 			Name: providerType,
-			NodeCreationFunc: func(client *rancher.Client, rolesPerPool []string, quantityPerPool []int32) (nodesList []*nodes.Node, err error) {
+			NodeCreationFunc: func(client *rancher.Client, rolesPerPool []string, quantityPerPool []int32, ec2Configs *rancherEc2.AWSEC2Configs) (nodesList []*nodes.Node, err error) {
 				var nodeConfig nodes.ExternalNodeConfig
 				config.LoadConfig(nodes.ExternalNodeConfigConfigurationFileKey, &nodeConfig)
 
@@ -90,4 +93,16 @@ func GetAWSOSNames(client *rancher.Client, customConfig rancherEc2.AWSEC2Configs
 	}
 
 	return osNames, nil
+}
+
+// GetWindowsPools gets a list of the windows machine configs
+func GetWindowsPools(client *rancher.Client, customConfig rancherEc2.AWSEC2Configs) []rancherEc2.AWSEC2Config {
+	var windowsConfigs []rancherEc2.AWSEC2Config
+	for _, machineConfig := range customConfig.AWSEC2Config {
+		if slices.Contains(machineConfig.Roles, "windows") {
+			windowsConfigs = append(windowsConfigs, machineConfig)
+		}
+	}
+
+	return windowsConfigs
 }

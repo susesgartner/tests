@@ -1,4 +1,4 @@
-//go:build validation
+//go:build validation || recurring
 
 package rke2
 
@@ -21,36 +21,35 @@ import (
 	"github.com/rancher/tests/actions/provisioning"
 	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/rancher/tests/actions/qase"
+	packageDefaults "github.com/rancher/tests/validation/provisioning/rke2/defaults"
 	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/assert"
 )
 
-type RKE2AgentCustomizationTestSuite struct {
-	suite.Suite
+type agentCustomizationTest struct {
 	client             *rancher.Client
 	session            *session.Session
 	standardUserClient *rancher.Client
 	cattleConfig       map[string]any
 }
 
-func (r *RKE2AgentCustomizationTestSuite) TearDownSuite() {
-	r.session.Cleanup()
-}
-
-func (r *RKE2AgentCustomizationTestSuite) SetupSuite() {
+func agentCustomizationSetup(t *testing.T) agentCustomizationTest {
+	var r agentCustomizationTest
 	testSession := session.NewSession()
 	r.session = testSession
 
-	r.cattleConfig = config.LoadConfigFromFile(os.Getenv(config.ConfigEnvironmentKey))
-
 	client, err := rancher.NewClient("", testSession)
-	require.NoError(r.T(), err)
+	assert.NoError(t, err)
 
 	r.client = client
 
+	r.cattleConfig = config.LoadConfigFromFile(os.Getenv(config.ConfigEnvironmentKey))
+
+	r.cattleConfig, err = packageDefaults.LoadPackageDefaults(r.cattleConfig, "")
+	assert.NoError(t, err)
+
 	r.cattleConfig, err = defaults.SetK8sDefault(client, "rke2", r.cattleConfig)
-	require.NoError(r.T(), err)
+	assert.NoError(t, err)
 
 	enabled := true
 	var testuser = namegen.AppendRandomString("testuser-")
@@ -63,17 +62,22 @@ func (r *RKE2AgentCustomizationTestSuite) SetupSuite() {
 	}
 
 	newUser, err := users.CreateUserWithRole(client, user, "user")
-	require.NoError(r.T(), err)
+	assert.NoError(t, err)
 
 	newUser.Password = user.Password
 
 	standardUserClient, err := client.AsUser(newUser)
-	require.NoError(r.T(), err)
+	assert.NoError(t, err)
 
 	r.standardUserClient = standardUserClient
+
+	return r
 }
 
-func (r *RKE2AgentCustomizationTestSuite) TestProvisioningRKE2ClusterAgentCustomization() {
+func TestAgentCustomization(t *testing.T) {
+	t.Parallel()
+	r := agentCustomizationSetup(t)
+
 	productionPool := []provisioninginput.MachinePools{provisioninginput.EtcdMachinePool, provisioninginput.ControlPlaneMachinePool, provisioninginput.WorkerMachinePool}
 	productionPool[0].MachinePoolConfig.Quantity = 3
 	productionPool[1].MachinePoolConfig.Quantity = 2
@@ -127,32 +131,35 @@ func (r *RKE2AgentCustomizationTestSuite) TestProvisioningRKE2ClusterAgentCustom
 	}
 
 	for _, tt := range tests {
-		subSession := r.session.NewSession()
-		defer subSession.Cleanup()
+		var err error
+		t.Cleanup(func() {
+			logrus.Info("Running cleanup")
+			r.session.Cleanup()
+		})
 
-		client, err := tt.client.WithSession(subSession)
-		require.NoError(r.T(), err)
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			clusterConfig := new(clusters.ClusterConfig)
+			operations.LoadObjectFromMap(defaults.ClusterConfigKey, r.cattleConfig, clusterConfig)
+			clusterConfig.MachinePools = tt.machinePools
 
-		clusterConfig := new(clusters.ClusterConfig)
-		operations.LoadObjectFromMap(defaults.ClusterConfigKey, r.cattleConfig, clusterConfig)
-		clusterConfig.MachinePools = tt.machinePools
+			if tt.agent == "fleet-agent" {
+				clusterConfig.FleetAgent = &agentCustomization
+				clusterConfig.ClusterAgent = nil
+			}
 
-		if tt.agent == "fleet-agent" {
-			clusterConfig.FleetAgent = &agentCustomization
-			clusterConfig.ClusterAgent = nil
-		}
+			if tt.agent == "cluster-agent" {
+				clusterConfig.ClusterAgent = &agentCustomization
+				clusterConfig.FleetAgent = nil
+			}
 
-		if tt.agent == "cluster-agent" {
-			clusterConfig.ClusterAgent = &agentCustomization
-			clusterConfig.FleetAgent = nil
-		}
+			provider := provisioning.CreateProvider(clusterConfig.Provider)
+			credentialSpec := cloudcredentials.LoadCloudCredential(string(provider.Name))
+			machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
 
-		provider := provisioning.CreateProvider(clusterConfig.Provider)
-		credentialSpec := cloudcredentials.LoadCloudCredential(string(provider.Name))
-		machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
-
-		_, err = provisioning.CreateProvisioningCluster(client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)
-		require.NoError(r.T(), err)
+			_, err = provisioning.CreateProvisioningCluster(tt.client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)
+			assert.NoError(t, err)
+		})
 
 		params := provisioning.GetProvisioningSchemaParams(tt.client, r.cattleConfig)
 		err = qase.UpdateSchemaParameters(tt.name, params)
@@ -162,7 +169,10 @@ func (r *RKE2AgentCustomizationTestSuite) TestProvisioningRKE2ClusterAgentCustom
 	}
 }
 
-func (r *RKE2AgentCustomizationTestSuite) TestFailureProvisioningRKE2ClusterAgentCustomization() {
+func TestAgentCustomizationFailure(t *testing.T) {
+	t.Parallel()
+	r := agentCustomizationSetup(t)
+
 	productionPool := []provisioninginput.MachinePools{provisioninginput.EtcdMachinePool, provisioninginput.ControlPlaneMachinePool, provisioninginput.WorkerMachinePool}
 	productionPool[0].MachinePoolConfig.Quantity = 3
 	productionPool[1].MachinePoolConfig.Quantity = 2
@@ -191,32 +201,36 @@ func (r *RKE2AgentCustomizationTestSuite) TestFailureProvisioningRKE2ClusterAgen
 	}
 
 	for _, tt := range tests {
-		subSession := r.session.NewSession()
-		defer subSession.Cleanup()
+		var err error
+		t.Cleanup(func() {
+			logrus.Info("Running cleanup")
+			r.session.Cleanup()
+		})
 
-		client, err := tt.client.WithSession(subSession)
-		require.NoError(r.T(), err)
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-		clusterConfig := new(clusters.ClusterConfig)
-		operations.LoadObjectFromMap(defaults.ClusterConfigKey, r.cattleConfig, clusterConfig)
-		clusterConfig.MachinePools = tt.machinePools
+			clusterConfig := new(clusters.ClusterConfig)
+			operations.LoadObjectFromMap(defaults.ClusterConfigKey, r.cattleConfig, clusterConfig)
+			clusterConfig.MachinePools = tt.machinePools
 
-		if tt.agent == "fleet-agent" {
-			clusterConfig.FleetAgent = &agentCustomization
-			clusterConfig.ClusterAgent = nil
-		}
+			if tt.agent == "fleet-agent" {
+				clusterConfig.FleetAgent = &agentCustomization
+				clusterConfig.ClusterAgent = nil
+			}
 
-		if tt.agent == "cluster-agent" {
-			clusterConfig.ClusterAgent = &agentCustomization
-			clusterConfig.FleetAgent = nil
-		}
+			if tt.agent == "cluster-agent" {
+				clusterConfig.ClusterAgent = &agentCustomization
+				clusterConfig.FleetAgent = nil
+			}
 
-		provider := provisioning.CreateProvider(clusterConfig.Provider)
-		credentialSpec := cloudcredentials.LoadCloudCredential(string(provider.Name))
-		machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
+			provider := provisioning.CreateProvider(clusterConfig.Provider)
+			credentialSpec := cloudcredentials.LoadCloudCredential(string(provider.Name))
+			machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
 
-		_, err = provisioning.CreateProvisioningCluster(client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)
-		require.Error(r.T(), err)
+			_, err = provisioning.CreateProvisioningCluster(tt.client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)
+			assert.NoError(t, err)
+		})
 
 		params := provisioning.GetProvisioningSchemaParams(tt.client, r.cattleConfig)
 		err = qase.UpdateSchemaParameters(tt.name, params)
@@ -224,8 +238,4 @@ func (r *RKE2AgentCustomizationTestSuite) TestFailureProvisioningRKE2ClusterAgen
 			logrus.Warningf("Failed to upload schema parameters %s", err)
 		}
 	}
-}
-
-func TestRKE2AgentCustomizationTestSuite(t *testing.T) {
-	suite.Run(t, new(RKE2AgentCustomizationTestSuite))
 }

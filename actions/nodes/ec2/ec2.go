@@ -26,7 +26,7 @@ const (
 )
 
 // CreateNodes creates `quantityPerPool[n]` number of ec2 instances
-func CreateNodes(client *rancher.Client, rolesPerPool []string, quantityPerPool []int32) (ec2Nodes []*nodes.Node, err error) {
+func CreateNodes(client *rancher.Client, rolesPerPool []string, quantityPerPool []int32, ec2Configs *rancherEc2.AWSEC2Configs) (ec2Nodes []*nodes.Node, err error) {
 	ec2Client, err := client.GetEC2Client()
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func CreateNodes(client *rancher.Client, rolesPerPool []string, quantityPerPool 
 	reservationConfigs := []*rancherEc2.AWSEC2Config{}
 	// provisioning instances in reverse order to allow windows instances time to become ready
 	for i := len(quantityPerPool) - 1; i >= 0; i-- {
-		config := MatchRoleToConfig(rolesPerPool[i], ec2Client.ClientConfig.AWSEC2Config)
+		config := MatchRoleToConfig(rolesPerPool[i], ec2Configs.AWSEC2Config)
 		if config == nil {
 			return nil, errors.New("No matching nodesAndRole for AWSEC2Config with role:" + rolesPerPool[i])
 		}

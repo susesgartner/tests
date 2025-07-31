@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
 	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
 	"github.com/rancher/shepherd/extensions/users"
@@ -118,7 +119,10 @@ func (c *CustomClusterProvisioningTestSuite) TestProvisioningK3SCustomCluster() 
 			c.Run(tt.name, func() {
 				externalNodeProvider := provisioning.ExternalNodeProviderSetup(clusterConfig.NodeProvider)
 
-				clusterObject, err := provisioning.CreateProvisioningCustomCluster(tt.client, &externalNodeProvider, clusterConfig)
+				awsEC2Configs := new(ec2.AWSEC2Configs)
+				operations.LoadObjectFromMap(ec2.ConfigurationFileKey, cattleConfig, awsEC2Configs)
+
+				clusterObject, err := provisioning.CreateProvisioningCustomCluster(tt.client, &externalNodeProvider, clusterConfig, awsEC2Configs)
 				reports.TimeoutClusterReport(clusterObject, err)
 				require.NoError(c.T(), err)
 
@@ -155,7 +159,10 @@ func (c *CustomClusterProvisioningTestSuite) TestProvisioningK3SCustomClusterDyn
 
 				externalNodeProvider := provisioning.ExternalNodeProviderSetup(clusterConfig.NodeProvider)
 
-				clusterObject, err := provisioning.CreateProvisioningCustomCluster(tt.client, &externalNodeProvider, clusterConfig)
+				awsEC2Configs := new(ec2.AWSEC2Configs)
+				operations.LoadObjectFromMap(ec2.ConfigurationFileKey, cattleConfig, awsEC2Configs)
+
+				clusterObject, err := provisioning.CreateProvisioningCustomCluster(tt.client, &externalNodeProvider, clusterConfig, awsEC2Configs)
 				reports.TimeoutClusterReport(clusterObject, err)
 				require.NoError(c.T(), err)
 

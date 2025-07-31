@@ -6,7 +6,6 @@ import (
 	"os"
 	"testing"
 
-	v1 "github.com/rancher/rancher/pkg/apis/rke.cattle.io/v1"
 	"github.com/rancher/shepherd/clients/rancher"
 	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
 	"github.com/rancher/shepherd/extensions/cloudcredentials"
@@ -25,24 +24,22 @@ import (
 	packageDefaults "github.com/rancher/tests/validation/provisioning/rke2/defaults"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-type aceTest struct {
+type nodeDriverTest struct {
 	client             *rancher.Client
 	session            *session.Session
 	standardUserClient *rancher.Client
 	cattleConfig       map[string]any
 }
 
-func aceSetup(t *testing.T) aceTest {
-	var r aceTest
+func nodeDriverSetup(t *testing.T) nodeDriverTest {
+	var r nodeDriverTest
 	testSession := session.NewSession()
 	r.session = testSession
 
 	client, err := rancher.NewClient("", testSession)
-	require.NoError(t, err)
-
+	assert.NoError(t, err)
 	r.client = client
 
 	r.cattleConfig = config.LoadConfigFromFile(os.Getenv(config.ConfigEnvironmentKey))
@@ -50,8 +47,8 @@ func aceSetup(t *testing.T) aceTest {
 	r.cattleConfig, err = packageDefaults.LoadPackageDefaults(r.cattleConfig, "")
 	assert.NoError(t, err)
 
-	r.cattleConfig, err = defaults.SetK8sDefault(client, "rke2", r.cattleConfig)
-	require.NoError(t, err)
+	r.cattleConfig, err = defaults.SetK8sDefault(r.client, "rke2", r.cattleConfig)
+	assert.NoError(t, err)
 
 	enabled := true
 	var testuser = namegen.AppendRandomString("testuser-")
@@ -64,63 +61,45 @@ func aceSetup(t *testing.T) aceTest {
 	}
 
 	newUser, err := users.CreateUserWithRole(client, user, "user")
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	newUser.Password = user.Password
 
 	standardUserClient, err := client.AsUser(newUser)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	r.standardUserClient = standardUserClient
 
 	return r
 }
 
-func TestACE(t *testing.T) {
+func TestNodeDriver(t *testing.T) {
 	t.Parallel()
-	r := aceSetup(t)
+	r := nodeDriverSetup(t)
 
-	nodeRoles0 := []provisioninginput.MachinePools{
-		{
-			MachinePoolConfig: machinepools.MachinePoolConfig{
-				NodeRoles: machinepools.NodeRoles{
-					ControlPlane: true,
-					Etcd:         false,
-					Worker:       false,
-					Quantity:     3,
-				},
-			},
-		},
-		{
-			MachinePoolConfig: machinepools.MachinePoolConfig{
-				NodeRoles: machinepools.NodeRoles{
-					ControlPlane: false,
-					Etcd:         true,
-					Worker:       false,
-					Quantity:     1,
-				},
-			},
-		},
-		{
-			MachinePoolConfig: machinepools.MachinePoolConfig{
-				NodeRoles: machinepools.NodeRoles{
-					ControlPlane: false,
-					Etcd:         false,
-					Worker:       true,
-					Quantity:     1,
-				},
-			},
-		},
-	}
+	nodeRolesAll := []provisioninginput.MachinePools{provisioninginput.AllRolesMachinePool}
+	nodeRolesShared := []provisioninginput.MachinePools{provisioninginput.EtcdControlPlaneMachinePool, provisioninginput.WorkerMachinePool}
+	nodeRolesDedicated := []provisioninginput.MachinePools{provisioninginput.EtcdMachinePool, provisioninginput.ControlPlaneMachinePool, provisioninginput.WorkerMachinePool}
+	nodeRolesWindows := []provisioninginput.MachinePools{provisioninginput.EtcdMachinePool, provisioninginput.ControlPlaneMachinePool, provisioninginput.WorkerMachinePool, provisioninginput.WindowsMachinePool}
+	nodeRolesStandard := []provisioninginput.MachinePools{provisioninginput.EtcdMachinePool, provisioninginput.ControlPlaneMachinePool, provisioninginput.WorkerMachinePool}
+
+	nodeRolesStandard[0].MachinePoolConfig.Quantity = 3
+	nodeRolesStandard[1].MachinePoolConfig.Quantity = 2
+	nodeRolesStandard[2].MachinePoolConfig.Quantity = 3
 
 	tests := []struct {
 		name         string
 		machinePools []provisioninginput.MachinePools
 		client       *rancher.Client
+		isWindows    bool
 	}{
-		{"ACE|etcd|3_cp|worker", nodeRoles0, r.standardUserClient},
+		{"RKE2_Node_Driver|etcd_cp_worker", nodeRolesAll, r.standardUserClient, false},
+		{"RKE2_Node_Driver|etcd_cp|worker", nodeRolesShared, r.standardUserClient, false},
+		{"RKE2_Node_Driver|etcd|cp|worker", nodeRolesDedicated, r.standardUserClient, false},
+		{"RKE2_Node_Driver|etcd|cp|worker|windows", nodeRolesWindows, r.standardUserClient, true},
+		{"RKE2_Node_Driver|3_etcd|2_cp|3_worker", nodeRolesStandard, r.standardUserClient, false},
 	}
-	// Test is obsolete when ACE is not set.
+
 	for _, tt := range tests {
 		var err error
 		t.Cleanup(func() {
@@ -130,25 +109,25 @@ func TestACE(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
 			clusterConfig := new(clusters.ClusterConfig)
 			operations.LoadObjectFromMap(defaults.ClusterConfigKey, r.cattleConfig, clusterConfig)
-
-			networking := provisioninginput.Networking{
-				LocalClusterAuthEndpoint: &v1.LocalClusterAuthEndpoint{
-					Enabled: true,
-				},
-			}
-			clusterConfig.Networking = &networking
 			clusterConfig.MachinePools = tt.machinePools
+
+			assert.NotNil(t, clusterConfig.Provider)
+			if clusterConfig.Provider != "vsphere" && tt.isWindows {
+				t.Skip("Windows test requires access to vsphere")
+			}
 
 			provider := provisioning.CreateProvider(clusterConfig.Provider)
 			credentialSpec := cloudcredentials.LoadCloudCredential(string(provider.Name))
 			machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
 
-			clusterObject, err := provisioning.CreateProvisioningCluster(tt.client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)
-			require.NoError(t, err)
+			cluster, err := provisioning.CreateProvisioningCluster(tt.client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)
+			assert.NoError(t, err)
 
-			provisioning.VerifyCluster(t, tt.client, clusterConfig, clusterObject)
+			logrus.Infof("Verifying cluster (%s)", cluster.Name)
+			provisioning.VerifyCluster(t, tt.client, clusterConfig, cluster)
 		})
 
 		params := provisioning.GetProvisioningSchemaParams(tt.client, r.cattleConfig)
