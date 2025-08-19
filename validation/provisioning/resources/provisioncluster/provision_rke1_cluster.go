@@ -3,10 +3,12 @@ package provisioncluster
 import (
 	"testing"
 
+	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
 	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/clusters/kubernetesversions"
+	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/nodes"
 	"github.com/rancher/tests/actions/clusters"
 	"github.com/rancher/tests/actions/provisioning"
@@ -49,7 +51,10 @@ func ProvisionRKE1Cluster(t *testing.T, client *rancher.Client, provisioningConf
 					if isCustomCluster {
 						externalNodeProvider := provisioning.ExternalNodeProviderSetup(clusterConfig.NodeProvider)
 
-						clusterObject, nodes, err = provisioning.CreateProvisioningRKE1CustomCluster(client, &externalNodeProvider, clusterConfig)
+						awsEC2Configs := new(ec2.AWSEC2Configs)
+						config.LoadConfig(ec2.ConfigurationFileKey, awsEC2Configs)
+
+						clusterObject, nodes, err = provisioning.CreateProvisioningRKE1CustomCluster(client, &externalNodeProvider, clusterConfig, awsEC2Configs)
 						require.NoError(t, err)
 
 						provisioning.VerifyRKE1Cluster(t, client, clusterConfig, clusterObject)

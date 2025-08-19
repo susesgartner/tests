@@ -403,7 +403,7 @@ func CreateProvisioningRKE1Cluster(client *rancher.Client, provider RKE1Provider
 }
 
 // CreateProvisioningRKE1CustomCluster provisions an rke1 cluster using a 3rd party client for its nodes, then runs verify checks
-func CreateProvisioningRKE1CustomCluster(client *rancher.Client, externalNodeProvider *ExternalNodeProvider, clustersConfig *clusters.ClusterConfig) (*management.Cluster, []*nodes.Node, error) {
+func CreateProvisioningRKE1CustomCluster(client *rancher.Client, externalNodeProvider *ExternalNodeProvider, clustersConfig *clusters.ClusterConfig, ec2Configs *ec2.AWSEC2Configs) (*management.Cluster, []*nodes.Node, error) {
 	setLogrusFormatter()
 	quantityPerPool := []int32{}
 	rolesPerPool := []string{}
@@ -430,7 +430,7 @@ func CreateProvisioningRKE1CustomCluster(client *rancher.Client, externalNodePro
 		}
 	}
 
-	nodes, err := externalNodeProvider.NodeCreationFunc(client, rolesPerPool, quantityPerPool, nil)
+	nodes, err := externalNodeProvider.NodeCreationFunc(client, rolesPerPool, quantityPerPool, ec2Configs)
 	if err != nil {
 		return nil, nil, err
 	}
