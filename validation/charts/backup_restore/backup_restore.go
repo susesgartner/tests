@@ -261,7 +261,11 @@ func createRKE1dsCluster(t *testing.T, client *rancher.Client) (*management.Clus
 
 	testClusterConfig.NodePools = nodeAndRoles
 	testClusterConfig.KubernetesVersion = provisioningConfig.RKE1KubernetesVersions[0]
-	clusterObject, _, err := provisioning.CreateProvisioningRKE1CustomCluster(client, &externalNodeProvider, testClusterConfig)
+
+	awsEC2Configs := new(ec2.AWSEC2Configs)
+	config.LoadConfig(ec2.ConfigurationFileKey, awsEC2Configs)
+
+	clusterObject, _, err := provisioning.CreateProvisioningRKE1CustomCluster(client, &externalNodeProvider, testClusterConfig, awsEC2Configs)
 
 	if err != nil {
 		return nil, nil, err

@@ -122,7 +122,10 @@ func RunTestPermutations(s *suite.Suite, testNamePrefix string, client *rancher.
 							testClusterConfig.CloudProvider = "external"
 						}
 
-						rke1ClusterObject, nodes, err := provisioning.CreateProvisioningRKE1CustomCluster(client, customProvider, testClusterConfig)
+						awsEC2Configs := new(ec2.AWSEC2Configs)
+						config.LoadConfig(ec2.ConfigurationFileKey, awsEC2Configs)
+
+						rke1ClusterObject, nodes, err := provisioning.CreateProvisioningRKE1CustomCluster(client, customProvider, testClusterConfig, awsEC2Configs)
 						reports.TimeoutRKEReport(rke1ClusterObject, err)
 						require.NoError(s.T(), err)
 

@@ -81,6 +81,10 @@ func getGlobalRoleBindingForUserWrangler(client *rancher.Client, grName, userID 
 func createDownstreamCluster(client *rancher.Client, clusterType string) (*management.Cluster, *v1.SteveAPIObject, *clusters.ClusterConfig, error) {
 	provisioningConfig := new(provisioninginput.Config)
 	config.LoadConfig(provisioninginput.ConfigurationFileKey, provisioningConfig)
+
+	awsEC2Configs := new(ec2.AWSEC2Configs)
+	config.LoadConfig(ec2.ConfigurationFileKey, awsEC2Configs)
+
 	nodeProviders := provisioningConfig.NodeProviders[0]
 	externalNodeProvider := provisioning.ExternalNodeProviderSetup(nodeProviders)
 	testClusterConfig := clusters.ConvertConfigToClusterConfig(provisioningConfig)
@@ -97,7 +101,7 @@ func createDownstreamCluster(client *rancher.Client, clusterType string) (*manag
 		}
 		testClusterConfig.NodePools = nodeAndRoles
 		testClusterConfig.KubernetesVersion = provisioningConfig.RKE1KubernetesVersions[0]
-		clusterObject, _, err = provisioning.CreateProvisioningRKE1CustomCluster(client, &externalNodeProvider, testClusterConfig)
+		clusterObject, _, err = provisioning.CreateProvisioningRKE1CustomCluster(client, &externalNodeProvider, testClusterConfig, awsEC2Configs)
 	case "RKE2":
 		nodeAndRoles := []provisioninginput.MachinePools{
 			provisioninginput.AllRolesMachinePool,
@@ -105,8 +109,6 @@ func createDownstreamCluster(client *rancher.Client, clusterType string) (*manag
 		testClusterConfig.MachinePools = nodeAndRoles
 		testClusterConfig.KubernetesVersion = provisioningConfig.RKE2KubernetesVersions[0]
 
-		awsEC2Configs := new(ec2.AWSEC2Configs)
-		config.LoadConfig(ec2.ConfigurationFileKey, awsEC2Configs)
 		steveObject, err = provisioning.CreateProvisioningCustomCluster(client, &externalNodeProvider, testClusterConfig, awsEC2Configs)
 	default:
 		return nil, nil, nil, fmt.Errorf("unsupported cluster type: %s", clusterType)

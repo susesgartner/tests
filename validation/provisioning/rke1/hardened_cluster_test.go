@@ -5,6 +5,7 @@ package rke1
 import (
 	"testing"
 
+	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
 	"github.com/rancher/shepherd/clients/rancher/catalog"
 	management "github.com/rancher/shepherd/clients/rancher/generated/management/v3"
@@ -109,7 +110,10 @@ func (c *HardenedRKE1ClusterProvisioningTestSuite) TestProvisioningRKE1HardenedC
 			testConfig := clusters.ConvertConfigToClusterConfig(&provisioningConfig)
 			testConfig.KubernetesVersion = c.provisioningConfig.RKE1KubernetesVersions[0]
 
-			clusterObject, _, err := provisioning.CreateProvisioningRKE1CustomCluster(tt.client, &externalNodeProvider, testConfig)
+			awsEC2Configs := new(ec2.AWSEC2Configs)
+			config.LoadConfig(ec2.ConfigurationFileKey, awsEC2Configs)
+
+			clusterObject, _, err := provisioning.CreateProvisioningRKE1CustomCluster(tt.client, &externalNodeProvider, testConfig, awsEC2Configs)
 			reports.TimeoutRKEReport(clusterObject, err)
 			require.NoError(c.T(), err)
 
