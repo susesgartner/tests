@@ -71,17 +71,17 @@ func (kc *KubeconfigTestSuite) SetupSuite() {
 	cluster2ID, err := clusters.GetClusterIDByName(kc.client, clusterObject2.Name)
 	require.NoError(kc.T(), err)
 
-	provisioning.VerifyCluster(kc.T(), kc.client, aceClusterConfig1, aceClusterObject1)
+	provisioning.VerifyCluster(kc.T(), kc.client, aceClusterObject1)
 	kc.aceCluster1, err = kc.client.Management.Cluster.ByID(aceCluster1ID)
 	require.NoError(kc.T(), err)
 	log.Infof("ACE-enabled cluster created: %s (%s)", kc.aceCluster1.Name, aceCluster1ID)
 
-	provisioning.VerifyCluster(kc.T(), kc.client, aceClusterConfig2, aceClusterObject2)
+	provisioning.VerifyCluster(kc.T(), kc.client, aceClusterObject2)
 	kc.aceCluster2, err = kc.client.Management.Cluster.ByID(aceCluster2ID)
 	require.NoError(kc.T(), err)
 	log.Infof("ACE-enabled cluster created: %s (%s)", kc.aceCluster2.Name, aceCluster2ID)
 
-	provisioning.VerifyCluster(kc.T(), kc.client, clusterConfig2, clusterObject2)
+	provisioning.VerifyCluster(kc.T(), kc.client, clusterObject2)
 	kc.cluster2, err = kc.client.Management.Cluster.ByID(cluster2ID)
 	require.NoError(kc.T(), err)
 	log.Infof("ACE-disabled cluster created: %s (%s)", kc.cluster2.Name, cluster2ID)
