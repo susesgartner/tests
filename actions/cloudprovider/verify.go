@@ -323,11 +323,11 @@ func CreateAndInstallAWSExternalCharts(client *rancher.Client, cluster *extensio
 
 // createNginxDeploymentWithPVC is a helper function that creates a nginx deployment in a cluster's default namespace
 func createNginxDeploymentWithPVC(steveclient *steveV1.Client, containerNamePrefix, pvcName, volName string) (*steveV1.SteveAPIObject, error) {
-	logrus.Infof("Vol: %s", volName)
-	logrus.Infof("Pod: %s", pvcName)
+	logrus.Tracef("Vol: %s", volName)
+	logrus.Tracef("Pod: %s", pvcName)
 
 	containerName := namegenerator.AppendRandomString(containerNamePrefix)
-	volMount := *&corev1.VolumeMount{
+	volMount := &corev1.VolumeMount{
 		MountPath: "/auto-mnt",
 		Name:      volName,
 	}
@@ -341,7 +341,7 @@ func createNginxDeploymentWithPVC(steveclient *steveV1.Client, containerNamePref
 		},
 	}
 
-	containerTemplate := wloads.NewContainer(nginxName, nginxName, corev1.PullAlways, []corev1.VolumeMount{volMount}, []corev1.EnvFromSource{}, nil, nil, nil)
+	containerTemplate := wloads.NewContainer(nginxName, nginxName, corev1.PullAlways, []corev1.VolumeMount{*volMount}, []corev1.EnvFromSource{}, nil, nil, nil)
 	podTemplate := wloads.NewPodTemplate([]corev1.Container{containerTemplate}, []corev1.Volume{podVol}, []corev1.LocalObjectReference{}, nil, nil)
 	deployment := wloads.NewDeploymentTemplate(containerName, defaultNamespace, podTemplate, true, nil)
 

@@ -210,6 +210,7 @@ type Config struct {
 	Providers                      []string                                 `json:"providers,omitempty" yaml:"providers,omitempty"`
 	NodeProviders                  []string                                 `json:"nodeProviders,omitempty" yaml:"nodeProviders,omitempty"`
 	Hardened                       bool                                     `json:"hardened,omitempty" yaml:"hardened,omitempty"`
+	Compliance                     bool                                     `json:"compliance,omitempty" yaml:"compliance,omitempty"`
 	AddOnConfig                    *AddOnConfig                             `json:"addonConfig,omitempty" yaml:"addonConfig,omitempty"`
 	K3SKubernetesVersions          []string                                 `json:"k3sKubernetesVersion,omitempty" yaml:"k3sKubernetesVersion,omitempty"`
 	RKE1KubernetesVersions         []string                                 `json:"rke1KubernetesVersion,omitempty" yaml:"rke1KubernetesVersion,omitempty"`

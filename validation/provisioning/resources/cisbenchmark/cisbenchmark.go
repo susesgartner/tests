@@ -16,40 +16,59 @@ import (
 )
 
 const (
-	System = "System"
-	pass   = "pass"
-	scan   = "scan"
-
-	cisBenchmarkSteveType = "cis.cattle.io.clusterscan"
+	System                   = "System"
+	pass                     = "pass"
+	scan                     = "scan"
+	defaultRegistrySettingID = "system-default-registry"
+	serverURLSettingID       = "server-url"
+	cisBenchmarkSteveType    = "cis.cattle.io.clusterscan"
 )
 
-// SetupCISBenchmarkChart installs the CIS Benchmark chart and waits for all resources to be ready.
-func SetupCISBenchmarkChart(client *rancher.Client, projectClusterID string, chartInstallOptions *charts.InstallOptions, benchmarkNamespace string) error {
-	logrus.Debugf("Installing CIS Benchmark chart...")
-	err := charts.InstallCISBenchmarkChart(client, chartInstallOptions)
+// SetupHardenedChart installs the CIS Benchmark chart and waits for all resources to be ready.
+func SetupHardenedChart(client *rancher.Client, projectClusterID string, chartInstallOptions *charts.InstallOptions, chartName, chartNamespace string) error {
+	serverSetting, err := client.Management.Setting.ByID(serverURLSettingID)
 	if err != nil {
 		return err
 	}
 
-	logrus.Debugf("Waiting for CIS Benchmark chart deployments to have expected number of available replicas...")
-	err = extensionscharts.WatchAndWaitDeployments(client, projectClusterID, benchmarkNamespace, metav1.ListOptions{})
+	registrySetting, err := client.Management.Setting.ByID(defaultRegistrySettingID)
 	if err != nil {
 		return err
 	}
 
-	logrus.Debugf("Waiting for CIS Benchmark chart DaemonSets to have expected number of available nodes...")
-	err = extensionscharts.WatchAndWaitDaemonSets(client, projectClusterID, benchmarkNamespace, metav1.ListOptions{})
+	benchmarkChartInstallActionPayload := &charts.PayloadOpts{
+		InstallOptions:  *chartInstallOptions,
+		Name:            chartName,
+		Namespace:       chartNamespace,
+		Host:            serverSetting.Value,
+		DefaultRegistry: registrySetting.Value,
+	}
+
+	logrus.Debugf("Installing %s chart...", chartName)
+	err = charts.InstallHardenedChart(client, benchmarkChartInstallActionPayload)
 	if err != nil {
 		return err
 	}
 
-	logrus.Debugf("Waiting for CIS Benchmark chart StatefulSets to have expected number of ready replicas...")
-	err = extensionscharts.WatchAndWaitStatefulSets(client, projectClusterID, benchmarkNamespace, metav1.ListOptions{})
+	logrus.Debugf("Waiting for %s chart deployments to have expected number of available replicas...", chartName)
+	err = extensionscharts.WatchAndWaitDeployments(client, projectClusterID, chartNamespace, metav1.ListOptions{})
 	if err != nil {
 		return err
 	}
 
-	logrus.Debugf("Successfully installed CIS Benchmark chart!")
+	logrus.Debugf("Waiting for %s chart DaemonSets to have expected number of available nodes...", chartName)
+	err = extensionscharts.WatchAndWaitDaemonSets(client, projectClusterID, chartNamespace, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	logrus.Debugf("Waiting for %s chart StatefulSets to have expected number of ready replicas...", chartName)
+	err = extensionscharts.WatchAndWaitStatefulSets(client, projectClusterID, chartNamespace, metav1.ListOptions{})
+	if err != nil {
+		return err
+	}
+
+	logrus.Debugf("Successfully installed %s chart!", chartName)
 
 	return nil
 }

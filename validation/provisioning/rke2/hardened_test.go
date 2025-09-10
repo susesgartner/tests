@@ -113,28 +113,37 @@ func TestHardened(t *testing.T) {
 			logrus.Infof("Verifying cluster (%s)", cluster.Name)
 			provisioning.VerifyCluster(t, tt.client, cluster)
 
+			chartName := charts.CISBenchmarkName
+			chartNamespace := charts.CISBenchmarkNamespace
+			if clusterConfig.Compliance {
+				chartName = charts.ComplianceName
+				chartNamespace = charts.ComplianceNamespace
+			}
+
 			clusterMeta, err := extensionscluster.NewClusterMeta(tt.client, cluster.Name)
 			reports.TimeoutClusterReport(cluster, err)
 			assert.NoError(t, err)
 
-			latestCISBenchmarkVersion, err := tt.client.Catalog.GetLatestChartVersion(charts.CISBenchmarkName, catalog.RancherChartRepo)
+			latestHardenedChartVersion, err := tt.client.Catalog.GetLatestChartVersion(chartName, catalog.RancherChartRepo)
 			assert.NoError(t, err)
 
-			project, err := projects.GetProjectByName(tt.client, cluster.ID, cis.System)
+			project, err := projects.GetProjectByName(tt.client, clusterMeta.ID, cis.System)
 			reports.TimeoutClusterReport(cluster, err)
 			assert.NoError(t, err)
 
 			r.project = project
-			assert.NotEmpty(t, r.project)
+			assert.Equal(t, r.project.Name, cis.System)
 
 			r.chartInstallOptions = &charts.InstallOptions{
 				Cluster:   clusterMeta,
-				Version:   latestCISBenchmarkVersion,
+				Version:   latestHardenedChartVersion,
 				ProjectID: r.project.ID,
 			}
 
-			logrus.Infof("Running CIS Benchmark on cluster (%s)", cluster.Name)
-			cis.SetupCISBenchmarkChart(tt.client, r.project.ClusterID, r.chartInstallOptions, charts.CISBenchmarkNamespace)
+			logrus.Infof("Setting up %s on cluster (%s)", chartName, cluster.Name)
+			cis.SetupHardenedChart(tt.client, r.project.ClusterID, r.chartInstallOptions, chartName, chartNamespace)
+
+			logrus.Infof("Running CIS scan on cluster (%s)", cluster.Name)
 			cis.RunCISScan(tt.client, r.project.ClusterID, tt.scanProfileName)
 		})
 
