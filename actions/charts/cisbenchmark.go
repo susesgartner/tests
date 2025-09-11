@@ -17,40 +17,20 @@ import (
 )
 
 const (
-	// Namespace that cis benchmark chart is installed in
 	CISBenchmarkNamespace = "cis-operator-system"
-	// Name of the cis benchmark chart
-	CISBenchmarkName = "rancher-cis-benchmark"
-	// Name of cis benchmark crd chart
-	CISBenchmarkCRDName = "rancher-cis-benchmark-crd"
+	CISBenchmarkName      = "rancher-cis-benchmark"
+	ComplianceNamespace   = "compliance-operator-system"
+	ComplianceName        = "rancher-compliance"
 )
 
-// InstallCISBenchmarkChart is a helper function that installs the cis-benchmark chart.
-func InstallCISBenchmarkChart(client *rancher.Client, installOptions *InstallOptions) error {
-	serverSetting, err := client.Management.Setting.ByID(serverURLSettingID)
+// InstallHardenedChart is a helper function that installs the cis-benchmark chart.
+func InstallHardenedChart(client *rancher.Client, ChartInstallActionPayload *PayloadOpts) error {
+	chartInstallAction, err := newCISBenchmarkChartInstallAction(ChartInstallActionPayload)
 	if err != nil {
 		return err
 	}
 
-	registrySetting, err := client.Management.Setting.ByID(defaultRegistrySettingID)
-	if err != nil {
-		return err
-	}
-
-	benchmarkChartInstallActionPayload := &PayloadOpts{
-		InstallOptions:  *installOptions,
-		Name:            CISBenchmarkName,
-		Namespace:       CISBenchmarkNamespace,
-		Host:            serverSetting.Value,
-		DefaultRegistry: registrySetting.Value,
-	}
-
-	chartInstallAction, err := newCISBenchmarkChartInstallAction(benchmarkChartInstallActionPayload)
-	if err != nil {
-		return err
-	}
-
-	catalogClient, err := client.GetClusterCatalogClient(installOptions.Cluster.ID)
+	catalogClient, err := client.GetClusterCatalogClient(ChartInstallActionPayload.InstallOptions.Cluster.ID)
 	if err != nil {
 		return err
 	}
@@ -58,13 +38,13 @@ func InstallCISBenchmarkChart(client *rancher.Client, installOptions *InstallOpt
 	client.Session.RegisterCleanupFunc(func() error {
 		defaultChartUninstallAction := NewChartUninstallAction()
 
-		err = catalogClient.UninstallChart(CISBenchmarkName, CISBenchmarkNamespace, defaultChartUninstallAction)
+		err = catalogClient.UninstallChart(ChartInstallActionPayload.Name, ChartInstallActionPayload.Namespace, defaultChartUninstallAction)
 		if err != nil {
 			return err
 		}
 
-		watchAppInterface, err := catalogClient.Apps(CISBenchmarkNamespace).Watch(context.TODO(), metav1.ListOptions{
-			FieldSelector:  "metadata.name=" + CISBenchmarkName,
+		watchAppInterface, err := catalogClient.Apps(ChartInstallActionPayload.Namespace).Watch(context.TODO(), metav1.ListOptions{
+			FieldSelector:  "metadata.name=" + ChartInstallActionPayload.Name,
 			TimeoutSeconds: &defaults.WatchTimeoutSeconds,
 		})
 		if err != nil {
@@ -72,9 +52,10 @@ func InstallCISBenchmarkChart(client *rancher.Client, installOptions *InstallOpt
 		}
 
 		err = wait.WatchWait(watchAppInterface, func(event watch.Event) (ready bool, err error) {
-			if event.Type == watch.Error {
+			switch event.Type {
+			case watch.Error:
 				return false, fmt.Errorf("there was an error uninstalling CIS benchmark chart")
-			} else if event.Type == watch.Deleted {
+			case watch.Deleted:
 				return true, nil
 			}
 
@@ -84,13 +65,13 @@ func InstallCISBenchmarkChart(client *rancher.Client, installOptions *InstallOpt
 			return err
 		}
 
-		err = catalogClient.UninstallChart(CISBenchmarkCRDName, CISBenchmarkName, defaultChartUninstallAction)
+		err = catalogClient.UninstallChart(ChartInstallActionPayload.Name+"-crd", ChartInstallActionPayload.Name, defaultChartUninstallAction)
 		if err != nil {
 			return err
 		}
 
-		watchAppInterface, err = catalogClient.Apps(CISBenchmarkNamespace).Watch(context.TODO(), metav1.ListOptions{
-			FieldSelector:  "metadata.name=" + CISBenchmarkCRDName,
+		watchAppInterface, err = catalogClient.Apps(ChartInstallActionPayload.Namespace).Watch(context.TODO(), metav1.ListOptions{
+			FieldSelector:  "metadata.name=" + ChartInstallActionPayload.Name,
 			TimeoutSeconds: &defaults.WatchTimeoutSeconds,
 		})
 		if err != nil {
@@ -113,14 +94,14 @@ func InstallCISBenchmarkChart(client *rancher.Client, installOptions *InstallOpt
 			return err
 		}
 
-		steveclient, err := client.Steve.ProxyDownstream(installOptions.Cluster.ID)
+		steveclient, err := client.Steve.ProxyDownstream(ChartInstallActionPayload.InstallOptions.Cluster.ID)
 		if err != nil {
 			return err
 		}
 
 		namespaceClient := steveclient.SteveType(namespaces.NamespaceSteveType)
 
-		namespace, err := namespaceClient.ByID(CISBenchmarkNamespace)
+		namespace, err := namespaceClient.ByID(ChartInstallActionPayload.Namespace)
 		if err != nil {
 			return err
 		}
@@ -135,7 +116,7 @@ func InstallCISBenchmarkChart(client *rancher.Client, installOptions *InstallOpt
 			return err
 		}
 
-		adminDynamicClient, err := adminClient.GetDownStreamClusterClient(installOptions.Cluster.ID)
+		adminDynamicClient, err := adminClient.GetDownStreamClusterClient(ChartInstallActionPayload.InstallOptions.Cluster.ID)
 		if err != nil {
 			return err
 		}
@@ -143,7 +124,7 @@ func InstallCISBenchmarkChart(client *rancher.Client, installOptions *InstallOpt
 		adminNamespaceResource := adminDynamicClient.Resource(kubenamespaces.NamespaceGroupVersionResource).Namespace("")
 
 		watchNamespaceInterface, err := adminNamespaceResource.Watch(context.TODO(), metav1.ListOptions{
-			FieldSelector:  "metadata.name=" + CISBenchmarkNamespace,
+			FieldSelector:  "metadata.name=" + ChartInstallActionPayload.Namespace,
 			TimeoutSeconds: &defaults.WatchTimeoutSeconds,
 		})
 		if err != nil {
@@ -164,8 +145,8 @@ func InstallCISBenchmarkChart(client *rancher.Client, installOptions *InstallOpt
 		return err
 	}
 
-	watchAppInterface, err := catalogClient.Apps(CISBenchmarkNamespace).Watch(context.TODO(), metav1.ListOptions{
-		FieldSelector:  "metadata.name=" + CISBenchmarkName,
+	watchAppInterface, err := catalogClient.Apps(ChartInstallActionPayload.Namespace).Watch(context.TODO(), metav1.ListOptions{
+		FieldSelector:  "metadata.name=" + ChartInstallActionPayload.Name,
 		TimeoutSeconds: &defaults.WatchTimeoutSeconds,
 	})
 	if err != nil {

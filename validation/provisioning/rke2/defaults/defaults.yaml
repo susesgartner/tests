@@ -28,6 +28,7 @@ clusterConfig:
   provider: "aws"
   nodeProvider: "ec2"
   hardened: false
+  compliance: false
   psact: ""
 
 #Required for all tests except template

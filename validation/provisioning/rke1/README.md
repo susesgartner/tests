@@ -67,6 +67,7 @@ provisioningInput:
         secretKey: ""
     retention: "72h"
     snapshot: false
+  compliance: false                   #Set this to true for rancher versions with compliance (2.12+)
 chartUpgrade: # will install a version of the out-of-tree chart (latest - 1) that can later be upgraded to the latest version. This is used for upgrade testing on cloud provider tests.
   isUpgradable: false
 ```

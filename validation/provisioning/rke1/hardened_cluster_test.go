@@ -23,6 +23,7 @@ import (
 	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/rancher/tests/actions/reports"
 	cis "github.com/rancher/tests/validation/provisioning/resources/cisbenchmark"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
@@ -119,14 +120,14 @@ func (c *HardenedRKE1ClusterProvisioningTestSuite) TestProvisioningRKE1HardenedC
 
 			provisioning.VerifyRKE1Cluster(c.T(), tt.client, testConfig, clusterObject)
 
-			cluster, err := extensionscluster.NewClusterMeta(tt.client, clusterObject.Name)
+			clusterMeta, err := extensionscluster.NewClusterMeta(tt.client, clusterObject.Name)
 			reports.TimeoutRKEReport(clusterObject, err)
 			require.NoError(c.T(), err)
 
 			latestCISBenchmarkVersion, err := tt.client.Catalog.GetLatestChartVersion(charts.CISBenchmarkName, catalog.RancherChartRepo)
 			require.NoError(c.T(), err)
 
-			project, err := projects.GetProjectByName(tt.client, cluster.ID, cis.System)
+			project, err := projects.GetProjectByName(tt.client, clusterMeta.ID, cis.System)
 			reports.TimeoutRKEReport(clusterObject, err)
 			require.NoError(c.T(), err)
 
@@ -134,12 +135,21 @@ func (c *HardenedRKE1ClusterProvisioningTestSuite) TestProvisioningRKE1HardenedC
 			require.NotEmpty(c.T(), c.project)
 
 			c.chartInstallOptions = &charts.InstallOptions{
-				Cluster:   cluster,
+				Cluster:   clusterMeta,
 				Version:   latestCISBenchmarkVersion,
 				ProjectID: c.project.ID,
 			}
 
-			cis.SetupCISBenchmarkChart(tt.client, c.project.ClusterID, c.chartInstallOptions, charts.CISBenchmarkNamespace)
+			chartName := charts.CISBenchmarkName
+			chartNamespace := charts.CISBenchmarkNamespace
+			if provisioningConfig.Compliance {
+				chartName = charts.ComplianceName
+				chartNamespace = charts.ComplianceNamespace
+			}
+			logrus.Infof("Setting up %s on cluster (%s)", chartName, clusterMeta.Name)
+			cis.SetupHardenedChart(tt.client, c.project.ClusterID, c.chartInstallOptions, chartName, chartNamespace)
+
+			logrus.Infof("Running CIS scan on cluster (%s)", clusterMeta.Name)
 			cis.RunCISScan(tt.client, c.project.ClusterID, tt.scanProfileName)
 		})
 	}

@@ -286,6 +286,7 @@ clusterConfig:
   provider: "aws"                     #Permutable in dynamic tests.
   nodeProvider: "ec2"
   hardened: false
+  compliance: false                   #Set this to true for rancher versions with compliance (2.12+)
   psact: ""                           #either rancher-privileged|rancher-restricted|rancher-baseline
   
   etcd:

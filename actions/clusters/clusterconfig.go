@@ -20,6 +20,7 @@ type ClusterConfig struct {
 	NodeProviders                  *[]string                                         `json:"nodeProviders" yaml:"nodeProviders"`
 	NodeProvider                   string                                            `json:"nodeProvider" yaml:"nodeProvider"`
 	Hardened                       bool                                              `json:"hardened" yaml:"hardened"`
+	Compliance                     bool                                              `json:"compliance" yaml:"compliance"`
 	AddOnConfig                    *provisioningInput.AddOnConfig                    `json:"addonConfig" yaml:"addonConfig"`
 	AgentEnvVars                   []rkev1.EnvVar                                    `json:"agentEnvVars" yaml:"agentEnvVars"`
 	AgentEnvVarsRKE1               []management.EnvVar                               `json:"agentEnvVarsRKE1" yaml:"agentEnvVarsRKE1"`

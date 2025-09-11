@@ -206,16 +206,17 @@ jobs:
             provider: "${{ vars.PROVIDER_AMAZON }}"
             nodeProvider: "ec2"
             pathToRepo: "${{ secrets.PATH_TO_REPO }}"
+            compliance: true
             registries:
-            rke2Registries:
-              mirrors:
-                "docker.io":
-                  endpoint: ["https://${{ secrets.QA_PRIVATE_REGISTRY_NAME }}"]
-              configs:
-                "${{ secrets.QA_PRIVATE_REGISTRY_NAME }}":
-                  "auth":
-                    username: "${{ env.DOCKERHUB_USERNAME }}"
-                    password: "${{ env.DOCKERHUB_PASSWORD }}"
+              rke2Registries:
+                mirrors:
+                  "docker.io":
+                    endpoint: ["https://${{ secrets.QA_PRIVATE_REGISTRY_NAME }}"]
+                configs:
+                  "${{ secrets.QA_PRIVATE_REGISTRY_NAME }}":
+                    "auth":
+                      username: "${{ env.DOCKERHUB_USERNAME }}"
+                      password: "${{ env.DOCKERHUB_PASSWORD }}"
 
           awsCredentials:
             secretKey: "$AWS_SECRET_KEY"
@@ -495,16 +496,17 @@ jobs:
             provider: "${{ vars.PROVIDER_AMAZON }}"
             nodeProvider: "ec2"
             pathToRepo: "${{ secrets.PATH_TO_REPO }}"
+            compliance: true
             registries:
-            rke2Registries:
-              mirrors:
-                "docker.io":
-                  endpoint: ["https://${{ secrets.QA_PRIVATE_REGISTRY_NAME }}"]
-              configs:
-                "${{ secrets.QA_PRIVATE_REGISTRY_NAME }}":
-                  "auth":
-                    username: "${{ env.DOCKERHUB_USERNAME }}"
-                    password: "${{ env.DOCKERHUB_PASSWORD }}"
+              rke2Registries:
+                mirrors:
+                  "docker.io":
+                    endpoint: ["https://${{ secrets.QA_PRIVATE_REGISTRY_NAME }}"]
+                configs:
+                  "${{ secrets.QA_PRIVATE_REGISTRY_NAME }}":
+                    "auth":
+                      username: "${{ env.DOCKERHUB_USERNAME }}"
+                      password: "${{ env.DOCKERHUB_PASSWORD }}"
 
           awsCredentials:
             secretKey: "$AWS_SECRET_KEY"
