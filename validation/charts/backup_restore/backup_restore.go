@@ -150,6 +150,9 @@ func createOpaqueS3Secret(steveClient *v1.Client) (string, error) {
 	logrus.Infof("Creating an opaque secret with name: %v", secretName)
 	secretTemplate := secrets.NewSecretTemplate(secretName, backupRestoreConfig.CredentialSecretNamespace, map[string][]byte{"accessKey": []byte(backupRestoreConfig.AccessKey), "secretKey": []byte(backupRestoreConfig.SecretKey)}, corev1.SecretTypeOpaque, nil, nil)
 	createdSecret, err := steveClient.SteveType(secrets.SecretSteveType).Create(secretTemplate)
+	if err != nil {
+		return "", err
+	}
 
 	return createdSecret.Name, err
 }

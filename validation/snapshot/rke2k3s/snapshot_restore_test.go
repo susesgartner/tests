@@ -96,38 +96,42 @@ func (s *SnapshotRestoreTestSuite) SetupSuite() {
 	require.NoError(s.T(), err)
 }
 
+func snapshotRestoreConfigs() []*etcdsnapshot.Config {
+	return []*etcdsnapshot.Config{
+		{
+			UpgradeKubernetesVersion: "",
+			SnapshotRestore:          "none",
+			RecurringRestores:        1,
+		},
+		{
+			UpgradeKubernetesVersion: "",
+			SnapshotRestore:          "kubernetesVersion",
+			RecurringRestores:        1,
+		},
+		{
+			UpgradeKubernetesVersion:     "",
+			SnapshotRestore:              "all",
+			ControlPlaneConcurrencyValue: "15%",
+			WorkerConcurrencyValue:       "20%",
+			RecurringRestores:            1,
+		},
+	}
+}
+
 func (s *SnapshotRestoreTestSuite) TestSnapshotRestore() {
-	snapshotRestoreNone := &etcdsnapshot.Config{
-		UpgradeKubernetesVersion: "",
-		SnapshotRestore:          "none",
-		RecurringRestores:        1,
-	}
-
-	snapshotRestoreK8sVersion := &etcdsnapshot.Config{
-		UpgradeKubernetesVersion: "",
-		SnapshotRestore:          "kubernetesVersion",
-		RecurringRestores:        1,
-	}
-
-	snapshotRestoreAll := &etcdsnapshot.Config{
-		UpgradeKubernetesVersion:     "",
-		SnapshotRestore:              "all",
-		ControlPlaneConcurrencyValue: "15%",
-		WorkerConcurrencyValue:       "20%",
-		RecurringRestores:            1,
-	}
-
+	snapshotRestoreConfigRKE2 := snapshotRestoreConfigs()
+	snapshotRestoreConfigK3s := snapshotRestoreConfigs()
 	tests := []struct {
 		name         string
 		etcdSnapshot *etcdsnapshot.Config
 		clusterID    string
 	}{
-		{"RKE2_Restore_ETCD", snapshotRestoreNone, s.rke2ClusterID},
-		{"RKE2_Restore_ETCD_K8sVersion", snapshotRestoreK8sVersion, s.rke2ClusterID},
-		{"RKE2_Restore_Upgrade_Strategy", snapshotRestoreAll, s.rke2ClusterID},
-		{"K3S_Restore_ETCD", snapshotRestoreNone, s.k3sClusterID},
-		{"K3S_Restore_ETCD_K8sVersion", snapshotRestoreK8sVersion, s.k3sClusterID},
-		{"K3S_Restore_Upgrade_Strategy", snapshotRestoreAll, s.k3sClusterID},
+		{"RKE2_Restore_ETCD", snapshotRestoreConfigRKE2[0], s.rke2ClusterID},
+		{"RKE2_Restore_ETCD_K8sVersion", snapshotRestoreConfigRKE2[1], s.rke2ClusterID},
+		{"RKE2_Restore_Upgrade_Strategy", snapshotRestoreConfigRKE2[2], s.rke2ClusterID},
+		{"K3S_Restore_ETCD", snapshotRestoreConfigK3s[0], s.k3sClusterID},
+		{"K3S_Restore_ETCD_K8sVersion", snapshotRestoreConfigK3s[1], s.k3sClusterID},
+		{"K3S_Restore_Upgrade_Strategy", snapshotRestoreConfigK3s[2], s.k3sClusterID},
 	}
 
 	for _, tt := range tests {
