@@ -48,7 +48,6 @@ const (
 	hostnameLimit               = 63
 	etcdSnapshotAnnotation      = "etcdsnapshot.rke.io/storage"
 	machineNameAnnotation       = "cluster.x-k8s.io/machine"
-	machineSteveResourceType    = "cluster.x-k8s.io.machine"
 	deploymentNameLabel         = "cluster.x-k8s.io/deployment-name"
 	onDemandPrefix              = "on-demand-"
 	s3                          = "s3"
@@ -296,10 +295,10 @@ func VerifyACE(t *testing.T, client *rancher.Client, cluster *management.Cluster
 	original, err := client.SwitchContext(cluster.Name, kubeConfig)
 	require.NoError(t, err)
 
-	originalResp, err := original.Resource(corev1.SchemeGroupVersion.WithResource("pods")).Namespace("").List(context.TODO(), metav1.ListOptions{})
+	originalResp, err := original.Resource(corev1.SchemeGroupVersion.WithResource(stevetypes.Pod)).Namespace("").List(context.TODO(), metav1.ListOptions{})
 	require.NoError(t, err)
 	for _, pod := range originalResp.Items {
-		t.Logf("Pod %v", pod.GetName())
+		logrus.Debugf("Pod %v", pod.GetName())
 	}
 
 	// each control plane has a context. For ACE, we should check these contexts
@@ -315,11 +314,11 @@ func VerifyACE(t *testing.T, client *rancher.Client, cluster *management.Cluster
 	for _, contextName := range contextNames {
 		dynamic, err := client.SwitchContext(contextName, kubeConfig)
 		assert.NoError(t, err)
-		resp, err := dynamic.Resource(corev1.SchemeGroupVersion.WithResource("pods")).Namespace("").List(context.TODO(), metav1.ListOptions{})
+		resp, err := dynamic.Resource(corev1.SchemeGroupVersion.WithResource(stevetypes.Pod)).Namespace("").List(context.TODO(), metav1.ListOptions{})
 		assert.NoError(t, err)
 		t.Logf("Switched Context to %v", contextName)
 		for _, pod := range resp.Items {
-			t.Logf("Pod %v", pod.GetName())
+			logrus.Debugf("Pod %v", pod.GetName())
 		}
 	}
 }
@@ -336,7 +335,7 @@ func VerifyHostnameLength(t *testing.T, client *rancher.Client, clusterObject *s
 	for _, mp := range clusterSpec.RKEConfig.MachinePools {
 		machineName := wranglername.SafeConcatName(clusterObject.Name, mp.Name)
 
-		machineResp, err := client.Steve.SteveType(machineSteveResourceType).List(nil)
+		machineResp, err := client.Steve.SteveType(stevetypes.Machine).List(nil)
 		require.NoError(t, err)
 
 		var machinePool *steveV1.SteveAPIObject

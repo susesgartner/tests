@@ -47,7 +47,7 @@ func CheckAllClusterPodsForRegistryPrefix(client *rancher.Client, clusterID, reg
 					return false, nil
 				}
 			}
-			logrus.Infof("pod/containerImage %s/%s is using the public registry", pod.Name, image)
+			logrus.Debugf("pod/containerImage %s/%s is using the public registry", pod.Name, image)
 		}
 	}
 	return true, nil
