@@ -295,7 +295,7 @@ func VerifyACE(t *testing.T, client *rancher.Client, cluster *management.Cluster
 	original, err := client.SwitchContext(cluster.Name, kubeConfig)
 	require.NoError(t, err)
 
-	originalResp, err := original.Resource(corev1.SchemeGroupVersion.WithResource(stevetypes.Pod)).Namespace("").List(context.TODO(), metav1.ListOptions{})
+	originalResp, err := original.Resource(corev1.SchemeGroupVersion.WithResource("pods")).Namespace("").List(context.TODO(), metav1.ListOptions{})
 	require.NoError(t, err)
 	for _, pod := range originalResp.Items {
 		logrus.Debugf("Pod %v", pod.GetName())
@@ -314,7 +314,7 @@ func VerifyACE(t *testing.T, client *rancher.Client, cluster *management.Cluster
 	for _, contextName := range contextNames {
 		dynamic, err := client.SwitchContext(contextName, kubeConfig)
 		assert.NoError(t, err)
-		resp, err := dynamic.Resource(corev1.SchemeGroupVersion.WithResource(stevetypes.Pod)).Namespace("").List(context.TODO(), metav1.ListOptions{})
+		resp, err := dynamic.Resource(corev1.SchemeGroupVersion.WithResource("pods")).Namespace("").List(context.TODO(), metav1.ListOptions{})
 		assert.NoError(t, err)
 		t.Logf("Switched Context to %v", contextName)
 		for _, pod := range resp.Items {
