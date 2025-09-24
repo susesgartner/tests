@@ -23,6 +23,7 @@ import (
 var (
 	runIDEnvVar             = os.Getenv(qase.TestRunEnvVar)
 	projectIDEnvVar         = os.Getenv(qase.ProjectIDEnvVar)
+	testRunName             = os.Getenv(qase.TestRunNameEnvVar)
 	_, callerFilePath, _, _ = runtime.Caller(0)
 	basepath                = filepath.Join(filepath.Dir(callerFilePath), "..", "..", "..", "..")
 )
@@ -38,6 +39,16 @@ func main() {
 		client := qase.SetupQaseClient()
 
 		runID, err := strconv.ParseInt(runIDEnvVar, 10, 64)
+
+		if testRunName != "" {
+			resp, err := client.CreateTestRun(testRunName, projectIDEnvVar)
+			if err != nil {
+				logrus.Error("error creating test run: ", err)
+			} else {
+				runID = resp.Result.Id
+			}
+		}
+
 		if err != nil {
 			logrus.Fatalf("error reporting converting string to int64: %v", err)
 		}
