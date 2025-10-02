@@ -29,7 +29,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	upstream "go.qase.io/client"
+	upstream "go.qase.io/qase-api-client"
 )
 
 type UpgradeDualstackWindowsKubernetesTestSuite struct {
@@ -142,7 +142,7 @@ func (u *UpgradeDualstackWindowsKubernetesTestSuite) TestUpgradeDualstackWindows
 			upgrade.DownstreamCluster(&u.Suite, tt.name, u.client, clusterResp.Name, tt.clusterConfig, tt.clusterID, tt.clusterConfig.KubernetesVersion, false)
 		})
 
-		upgradedK8sParam := upstream.Params{Title: "UpgradedK8sVersion", Values: []string{tt.clusterConfig.KubernetesVersion}}
+		upgradedK8sParam := upstream.TestCaseParameterCreate{ParameterSingle: &upstream.ParameterSingle{Title: "UpgradedK8sVersion", Values: []string{tt.clusterConfig.KubernetesVersion}}}
 		params := provisioning.GetProvisioningSchemaParams(u.client, u.cattleConfig)
 		params = append(params, upgradedK8sParam)
 

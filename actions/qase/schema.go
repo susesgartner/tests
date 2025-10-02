@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
-	upstream "go.qase.io/client"
+	upstream "go.qase.io/qase-api-client"
 	"gopkg.in/yaml.v2"
 )
 
@@ -65,7 +65,7 @@ func getSchemaPath(basePath string) (string, error) {
 }
 
 // UpdateSchemaParameters updates the parameters of a test's schema file
-func UpdateSchemaParameters(testName string, params []upstream.Params) error {
+func UpdateSchemaParameters(testName string, params []upstream.TestCaseParameterCreate) error {
 	_, schemaFilepath, _, _ := runtime.Caller(1)
 	packagePath := filepath.Dir(schemaFilepath)
 
@@ -77,7 +77,7 @@ func UpdateSchemaParameters(testName string, params []upstream.Params) error {
 	for j, qaseSuiteSchema := range qaseSuiteSchemas {
 		for k, testCase := range qaseSuiteSchema.Cases {
 			if testCase.Title == testName {
-				qaseSuiteSchemas[j].Cases[k].Params = params
+				qaseSuiteSchemas[j].Cases[k].Parameters = params
 			}
 		}
 	}
@@ -107,9 +107,13 @@ func GetTestSchema(testName string, suiteSchemas []TestSuiteSchema) (*upstream.T
 			if testCase.Title == testName {
 				return &testCase, nil
 			}
-			automationTestName, ok := testCase.CustomField[strconv.Itoa(AutomationTestNameID)]
-			if ok && automationTestName == testName {
-				return &testCase, nil
+
+			if testCase.CustomField != nil {
+				customField := *testCase.CustomField
+				automationTestName, ok := customField[strconv.Itoa(int(AutomationTestNameID))]
+				if ok && automationTestName == testName {
+					return &testCase, nil
+				}
 			}
 		}
 	}
@@ -127,7 +131,7 @@ func UploadSchemas(client *Service, basePath string) error {
 
 	for _, suite := range caseSuiteSchemas {
 		for _, project := range suite.Projects {
-			logrus.Infof("Uploading to suite %s to project %s", suite.Suite, project)
+			logrus.Infof("Uploading suite %s to project %s", suite.Suite, project)
 			suiteID, err := createSuitePath(client, suite.Suite, project)
 			if err != nil {
 				return err
@@ -135,15 +139,22 @@ func UploadSchemas(client *Service, basePath string) error {
 
 			var testCases []upstream.TestCaseCreate
 			for _, test := range suite.Cases {
-				test.SuiteId = suiteID
+				if test.Title == "" {
+					continue
+				}
+				test.SuiteId = &suiteID
 				for i, step := range test.Steps {
-					if isFile(strings.TrimSpace(step.Data), basePath) {
-						fileContent, err := os.ReadFile(filepath.Join(basePath, strings.TrimSpace(step.Data)))
-						if err != nil {
-							logrus.Error("Error reading file: ", err)
-							return err
+					if step.Data != nil {
+						if isFile(strings.TrimSpace(*step.Data), basePath) {
+							fileContent, err := os.ReadFile(filepath.Join(basePath, strings.TrimSpace(*step.Data)))
+							if err != nil {
+								logrus.Error("Error reading file: ", err)
+								return err
+							}
+
+							testData := strings.TrimSpace(*step.Data) + "\n\n" + string(fileContent)
+							test.Steps[i].Data = &testData
 						}
-						test.Steps[i].Data = strings.TrimSpace(step.Data) + "\n\n" + string(fileContent)
 					}
 				}
 				testCases = append(testCases, test)

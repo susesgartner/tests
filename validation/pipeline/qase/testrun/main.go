@@ -36,7 +36,7 @@ func main() {
 
 		newRunID := resp.Result.Id
 		recurringTestRun := RecurringTestRun{}
-		recurringTestRun.ID = newRunID
+		recurringTestRun.ID = *newRunID
 		err = writeToConfigFile(recurringTestRun)
 		if err != nil {
 			logrus.Error("error writiing test run config: ", err)
@@ -48,7 +48,8 @@ func main() {
 			logrus.Fatalf("error reporting converting string to int32: %v", err)
 		}
 		// complete test run
-		_, _, err = client.Client.RunsApi.CompleteRun(context.TODO(), qasedefaults.RancherManagerProjectID, int32(testRunConfig.ID))
+		completeRunRequest := client.Client.RunsAPI.CompleteRun(context.TODO(), qasedefaults.RancherManagerProjectID, int32(testRunConfig.ID))
+		completeRunRequest.Execute()
 		if err != nil {
 			log.Fatalf("error completing test run: %v", err)
 		}
