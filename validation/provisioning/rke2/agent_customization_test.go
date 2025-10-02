@@ -220,11 +220,8 @@ func TestAgentCustomizationFailure(t *testing.T) {
 			machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
 
 			logrus.Info("Provisioning cluster")
-			cluster, err := provisioning.CreateProvisioningCluster(tt.client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)
-			assert.NoError(t, err)
-
-			logrus.Infof("Verifying cluster (%s)", cluster.Name)
-			provisioning.VerifyCluster(t, tt.client, cluster)
+			_, err := provisioning.CreateProvisioningCluster(tt.client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)
+			assert.Error(t, err)
 		})
 
 		params := provisioning.GetProvisioningSchemaParams(tt.client, r.cattleConfig)
