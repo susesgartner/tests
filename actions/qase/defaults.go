@@ -2,7 +2,7 @@ package qase
 
 const (
 	AutomationSuiteID       = int32(554)
-	AutomationTestNameID    = 15
+	AutomationTestNameID    = int64(15)
 	QaseTokenEnvVar         = "QASE_AUTOMATION_TOKEN"
 	RancherManagerProjectID = "RM"
 	RecurringRunID          = 1

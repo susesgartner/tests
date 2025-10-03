@@ -2,7 +2,6 @@ package provisioning
 
 import (
 	"strings"
-	"time"
 
 	rancherEc2 "github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
@@ -12,12 +11,12 @@ import (
 	"github.com/rancher/tests/actions/config/defaults"
 	"github.com/rancher/tests/actions/machinepools"
 	"github.com/sirupsen/logrus"
-	upstream "go.qase.io/client"
+	upstream "go.qase.io/qase-api-client"
 )
 
 // GetProvisioningSchemaParams gets a set of params from the cattle config and returns a qase params object
-func GetProvisioningSchemaParams(client *rancher.Client, cattleConfig map[string]any) []upstream.Params {
-	var params []upstream.Params
+func GetProvisioningSchemaParams(client *rancher.Client, cattleConfig map[string]any) []upstream.TestCaseParameterCreate {
+	var params []upstream.TestCaseParameterCreate
 	clusterConfig := new(clusters.ClusterConfig)
 	operations.LoadObjectFromMap(defaults.ClusterConfigKey, cattleConfig, clusterConfig)
 
@@ -25,35 +24,29 @@ func GetProvisioningSchemaParams(client *rancher.Client, cattleConfig map[string
 	credentialSpec := cloudcredentials.LoadCloudCredential(string(provider.Name))
 	machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
 
-	currentDate := time.Now().Format("2006-01-02 03:04PM")
-
-	var osNames []string
-	var err error
-	var osParam upstream.Params
-
+	var osParam upstream.TestCaseParameterCreate
 	if strings.Contains(clusterConfig.Provider, "aws") {
-		osNames, err = provider.GetOSNamesFunc(client, credentialSpec, machineConfigSpec)
+		osNames, err := provider.GetOSNamesFunc(client, credentialSpec, machineConfigSpec)
 		if err != nil {
 			logrus.Warningf("Error getting OS Name %s", err)
 			return nil
 		}
 
-		osParam = upstream.Params{Title: "OS", Values: osNames}
+		osParam = upstream.TestCaseParameterCreate{ParameterSingle: &upstream.ParameterSingle{Title: "OS", Values: osNames}}
 	}
 
-	providerParam := upstream.Params{Title: "Provider", Values: []string{clusterConfig.Provider}}
-	k8sParam := upstream.Params{Title: "K8sVersion", Values: []string{clusterConfig.KubernetesVersion}}
-	cniParam := upstream.Params{Title: "CNI", Values: []string{clusterConfig.CNI}}
-	timeParam := upstream.Params{Title: "Time", Values: []string{currentDate}}
+	providerParam := upstream.TestCaseParameterCreate{ParameterSingle: &upstream.ParameterSingle{Title: "Provider", Values: []string{clusterConfig.Provider}}}
+	k8sParam := upstream.TestCaseParameterCreate{ParameterSingle: &upstream.ParameterSingle{Title: "K8sVersion", Values: []string{clusterConfig.KubernetesVersion}}}
+	cniParam := upstream.TestCaseParameterCreate{ParameterSingle: &upstream.ParameterSingle{Title: "CNI", Values: []string{clusterConfig.CNI}}}
 
-	params = append(params, providerParam, osParam, k8sParam, cniParam, timeParam)
+	params = append(params, providerParam, osParam, k8sParam, cniParam)
 
 	return params
 }
 
 // GetCustomSchemaParams gets a set of params from the cattle config and returns a qase params object
-func GetCustomSchemaParams(client *rancher.Client, cattleConfig map[string]any) []upstream.Params {
-	var params []upstream.Params
+func GetCustomSchemaParams(client *rancher.Client, cattleConfig map[string]any) []upstream.TestCaseParameterCreate {
+	var params []upstream.TestCaseParameterCreate
 	clusterConfig := new(clusters.ClusterConfig)
 	operations.LoadObjectFromMap(defaults.ClusterConfigKey, cattleConfig, clusterConfig)
 
@@ -67,15 +60,12 @@ func GetCustomSchemaParams(client *rancher.Client, cattleConfig map[string]any) 
 		return nil
 	}
 
-	currentDate := time.Now().Format("2006-01-02 03:04PM")
+	osParam := upstream.TestCaseParameterCreate{ParameterSingle: &upstream.ParameterSingle{Title: "OS", Values: osNames}}
+	providerParam := upstream.TestCaseParameterCreate{ParameterSingle: &upstream.ParameterSingle{Title: "Provider", Values: []string{clusterConfig.Provider}}}
+	k8sParam := upstream.TestCaseParameterCreate{ParameterSingle: &upstream.ParameterSingle{Title: "K8sVersion", Values: []string{clusterConfig.KubernetesVersion}}}
+	cniParam := upstream.TestCaseParameterCreate{ParameterSingle: &upstream.ParameterSingle{Title: "CNI", Values: []string{clusterConfig.CNI}}}
 
-	osParam := upstream.Params{Title: "OS", Values: osNames}
-	providerParam := upstream.Params{Title: "Provider", Values: []string{clusterConfig.Provider}}
-	k8sParam := upstream.Params{Title: "K8sVersion", Values: []string{clusterConfig.KubernetesVersion}}
-	cniParam := upstream.Params{Title: "CNI", Values: []string{clusterConfig.CNI}}
-	timeParam := upstream.Params{Title: "Time", Values: []string{currentDate}}
-
-	params = append(params, providerParam, osParam, k8sParam, cniParam, timeParam)
+	params = append(params, providerParam, osParam, k8sParam, cniParam)
 
 	return params
 }

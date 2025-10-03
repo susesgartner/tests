@@ -11,12 +11,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/antihax/optional"
 	"github.com/rancher/tests/actions/qase"
 	qaseactions "github.com/rancher/tests/actions/qase"
 	"github.com/rancher/tests/actions/qase/testresult"
 	"github.com/sirupsen/logrus"
-	upstream "go.qase.io/client"
+	upstream "go.qase.io/qase-api-client"
 	"gopkg.in/yaml.v2"
 )
 
@@ -26,6 +25,10 @@ var (
 	testRunName             = os.Getenv(qase.TestRunNameEnvVar)
 	_, callerFilePath, _, _ = runtime.Caller(0)
 	basepath                = filepath.Join(filepath.Dir(callerFilePath), "..", "..", "..", "..")
+)
+
+const (
+	requestLimit = 100
 )
 
 func main() {
@@ -45,7 +48,7 @@ func main() {
 			if err != nil {
 				logrus.Error("error creating test run: ", err)
 			} else {
-				runID = resp.Result.Id
+				runID = *resp.Result.Id
 			}
 		}
 
@@ -53,7 +56,7 @@ func main() {
 			logrus.Fatalf("error reporting converting string to int64: %v", err)
 		}
 
-		err = reportTestQases(client, runID)
+		err = reportTestQases(client, int32(runID))
 		if err != nil {
 			logrus.Error("error reporting: ", err)
 		}
@@ -69,19 +72,15 @@ func getAllAutomationTestCases(qaseService *qase.Service) (map[string]upstream.T
 	var numOfTestsCases int32 = 1
 	offSetCount := 0
 	for numOfTestsCases > 0 {
-		offset := optional.NewInt32(int32(offSetCount))
-		localVarOptionals := &upstream.CasesApiGetCasesOpts{
-			Offset: offset,
-		}
+		casesRequest := qaseService.Client.CasesAPI.GetCases(context.TODO(), projectIDEnvVar)
 
-		tempResult, _, err := qaseService.Client.CasesApi.GetCases(context.TODO(), projectIDEnvVar, localVarOptionals)
-		if err != nil {
-			return nil, err
-		}
+		casesRequest = casesRequest.Offset(int32(offSetCount))
+		casesRequest = casesRequest.Limit(requestLimit)
+		resp, _, _ := casesRequest.Execute()
 
-		testCases = append(testCases, tempResult.Result.Entities...)
-		numOfTestsCases = tempResult.Result.Count
-		offSetCount += 10
+		testCases = append(testCases, resp.Result.Entities...)
+		numOfTestsCases = *resp.Result.Count
+		offSetCount += len(resp.Result.Entities)
 	}
 
 	for _, testCase := range testCases {
@@ -89,7 +88,7 @@ func getAllAutomationTestCases(qaseService *qase.Service) (map[string]upstream.T
 		if automationTestNameCustomField != "" {
 			testCaseNameMap[automationTestNameCustomField] = testCase
 		} else {
-			testCaseNameMap[testCase.Title] = testCase
+			testCaseNameMap[*testCase.Title] = testCase
 		}
 
 	}
@@ -169,7 +168,7 @@ func parseTestResults(outputs []testresult.GoTestOutput) map[string]*testresult.
 }
 
 // reportTestQases updates a qase test run with the results of a set of tests
-func reportTestQases(qaseService *qase.Service, testRunID int64) error {
+func reportTestQases(qaseService *qase.Service, testRunID int32) error {
 	resultsOutputs, err := readTestResults()
 	if err != nil {
 		return nil
@@ -206,8 +205,8 @@ func reportTestQases(qaseService *qase.Service, testRunID int64) error {
 			}
 
 			// update test status
-			logrus.Infof("Updating run with %v", testQase.Title)
-			err = updateTestInRun(qaseService.Client, *goTestResult, testQase, qaseTestSchema.Params, testRunID)
+			logrus.Infof("Updating run with %v", *testQase.Title)
+			err = updateTestInRun(qaseService.Client, *goTestResult, testQase, qaseTestSchema.Parameters, testRunID)
 			if err != nil {
 				logrus.Warning(err)
 				continue
@@ -223,30 +222,42 @@ func reportTestQases(qaseService *qase.Service, testRunID int64) error {
 }
 
 // updateTestInRun updates the current qase test run with a test
-func updateTestInRun(client *upstream.APIClient, testResult testresult.GoTestResult, qaseTestCase upstream.TestCase, params []upstream.Params, testRunID int64) error {
-	var elapsedTime float64
+func updateTestInRun(client *upstream.APIClient, testResult testresult.GoTestResult, qaseTestCase upstream.TestCase, params []upstream.TestCaseParameterCreate, testRunID int32) error {
+	var elapsedTime int64
+	var err error
 	if testResult.Elapsed != "" {
-		var err error
-		elapsedTime, err = strconv.ParseFloat(testResult.Elapsed, 64)
+		floatTime, err := strconv.ParseFloat(testResult.Elapsed, 64)
 		if err != nil {
 			return err
 		}
+		elapsedTime = int64(floatTime)
 	}
 
-	var resultParams []string
+	resultParams := make(map[string]string)
 	for _, param := range params {
-		resultParams = append(resultParams, fmt.Sprintf("%s: [%s]", param.Title, strings.Join(param.Values, ", ")))
+		if len(param.ParameterSingle.Values) > 0 {
+			paramKey := param.ParameterSingle.Title
+			paramVal := strings.Join(param.ParameterSingle.Values, ", ")
+			if paramVal == "" {
+				continue
+			}
+
+			resultParams[paramKey] = paramVal
+		}
 	}
 
 	resultBody := upstream.ResultCreate{
 		CaseId:  qaseTestCase.Id,
 		Status:  fmt.Sprintf("%sed", testResult.Status),
-		Time:    int64(elapsedTime),
+		Time:    *upstream.NewNullableInt64(&elapsedTime),
 		Param:   resultParams,
-		Comment: testResult.StackTrace,
+		Comment: *upstream.NewNullableString(&testResult.StackTrace),
 	}
 
-	_, _, err := client.ResultsApi.CreateResult(context.TODO(), resultBody, projectIDEnvVar, testRunID)
+	resultRequest := client.ResultsAPI.CreateResult(context.TODO(), projectIDEnvVar, testRunID)
+	resultRequest = resultRequest.ResultCreate(resultBody)
+
+	_, _, err = resultRequest.Execute()
 	if err != nil {
 		return err
 	}
@@ -257,8 +268,8 @@ func updateTestInRun(client *upstream.APIClient, testResult testresult.GoTestRes
 // getAutomationTestName gets the custom test name field
 func getAutomationTestName(customFields []upstream.CustomFieldValue) string {
 	for _, field := range customFields {
-		if field.Id == qase.AutomationTestNameID {
-			return field.Value
+		if *field.Id == qase.AutomationTestNameID {
+			return *field.Value
 		}
 	}
 	return ""

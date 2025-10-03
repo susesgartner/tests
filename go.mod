@@ -23,6 +23,7 @@ replace (
 	go.opentelemetry.io/otel/trace => go.opentelemetry.io/otel/trace v1.28.0
 	go.opentelemetry.io/proto/otlp => go.opentelemetry.io/proto/otlp v1.3.1
 	go.qase.io/client => github.com/rancher/qase-go/client v0.0.0-20250627195016-142ff3dfec16
+	go.qase.io/qase-api-client => github.com/qase-tms/qase-go/qase-api-client v1.2.0
 
 	helm.sh/helm/v3 => github.com/rancher/helm/v3 v3.16.1-rancher1
 	k8s.io/api => k8s.io/api v0.32.2
@@ -75,6 +76,7 @@ require (
 	github.com/rancher/tests/actions v0.0.0-20250912201502-f3fc74d763e3
 	github.com/rancher/tests/interoperability v0.0.0-00010101000000-000000000000
 	github.com/rancher/tfp-automation v0.0.0-20250926183218-1454b20eb26b
+	go.qase.io/qase-api-client v0.0.0-00010101000000-000000000000
 )
 
 require (
@@ -192,6 +194,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20250505200425-f936aa4a68b2 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250603155806-513f23925822 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
+	gopkg.in/validator.v2 v2.0.1 // indirect
 	k8s.io/pod-security-admission v0.33.2 // indirect
 	kubevirt.io/api v1.4.0 // indirect
 	kubevirt.io/containerized-data-importer-api v1.61.0 // indirect

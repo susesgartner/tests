@@ -15,7 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	upstream "go.qase.io/client"
+	upstream "go.qase.io/qase-api-client"
 )
 
 type UpgradeKubernetesTestSuite struct {
@@ -53,7 +53,7 @@ func (u *UpgradeKubernetesTestSuite) TestUpgradeKubernetes() {
 	}
 
 	var testConfig *clusters.ClusterConfig
-	var params []upstream.Params
+	var params []upstream.TestCaseParameterCreate
 
 	for _, tt := range tests {
 		if u.clusters[0].VersionToUpgrade == "" {
@@ -73,8 +73,8 @@ func (u *UpgradeKubernetesTestSuite) TestUpgradeKubernetes() {
 		upgradedCluster, err := tt.client.Management.Cluster.ByID(clusterMeta.ID)
 		require.NoError(u.T(), err)
 
-		k8sParam := upstream.Params{Title: "K8sVersion", Values: []string{testConfig.KubernetesVersion}}
-		upgradedK8sParam := upstream.Params{Title: "UpgradedK8sVersion", Values: []string{upgradedCluster.Version.GitVersion}}
+		k8sParam := upstream.TestCaseParameterCreate{ParameterSingle: &upstream.ParameterSingle{Title: "K8sVersion", Values: []string{testConfig.KubernetesVersion}}}
+		upgradedK8sParam := upstream.TestCaseParameterCreate{ParameterSingle: &upstream.ParameterSingle{Title: "UpgradedK8sVersion", Values: []string{upgradedCluster.Version.GitVersion}}}
 
 		params = append(params, k8sParam, upgradedK8sParam)
 		err = qase.UpdateSchemaParameters(tt.name, params)
