@@ -184,3 +184,65 @@ func TestVSphereCloudProvider(t *testing.T) {
 		}
 	}
 }
+
+func TestHarvesterCloudProvider(t *testing.T) {
+	t.Parallel()
+	r := cloudProviderSetup(t)
+
+	nodeRolesDedicated := []provisioninginput.MachinePools{provisioninginput.EtcdMachinePool, provisioninginput.ControlPlaneMachinePool, provisioninginput.WorkerMachinePool}
+	nodeRolesDedicated[0].MachinePoolConfig.Quantity = 1
+	nodeRolesDedicated[1].MachinePoolConfig.Quantity = 2
+	nodeRolesDedicated[2].MachinePoolConfig.Quantity = 2
+
+	tests := []struct {
+		name         string
+		machinePools []provisioninginput.MachinePools
+		client       *rancher.Client
+	}{
+		{"Harvester_oot", nodeRolesDedicated, r.client},
+	}
+
+	clusterConfig := new(clusters.ClusterConfig)
+	operations.LoadObjectFromMap(defaults.ClusterConfigKey, r.cattleConfig, clusterConfig)
+	if clusterConfig.Provider != "harvester" {
+		t.Skip("Harvester Cloud Provider test requires access to harvester.")
+	}
+
+	for _, tt := range tests {
+		var err error
+		t.Cleanup(func() {
+			logrus.Infof("Running cleanup (%s)", tt.name)
+			r.session.Cleanup()
+		})
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			clusterConfig.Provider = providers.Harvester
+			clusterConfig.MachinePools = tt.machinePools
+
+			provider := provisioning.CreateProvider(clusterConfig.Provider)
+			credentialSpec := cloudcredentials.LoadCloudCredential(string(provider.Name))
+			machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
+
+			logrus.Infof("Provisioning cluster")
+			cluster, err := provisioning.CreateProvisioningCluster(tt.client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)
+			assert.NoError(t, err)
+
+			logrus.Infof("Verifying the cluster is ready (%s)", cluster.Name)
+			provisioning.VerifyClusterReady(t, r.client, cluster)
+
+			logrus.Infof("Verifying cluster pods (%s)", cluster.Name)
+			pods.VerifyClusterPods(t, r.client, cluster)
+
+			logrus.Infof("Verifying cloud provider (%s)", cluster.Name)
+			provider.VerifyCloudProviderFunc(t, r.client, cluster)
+		})
+
+		params := provisioning.GetProvisioningSchemaParams(tt.client, r.cattleConfig)
+		err = qase.UpdateSchemaParameters(tt.name, params)
+		if err != nil {
+			logrus.Warningf("Failed to upload schema parameters %s", err)
+		}
+	}
+}
