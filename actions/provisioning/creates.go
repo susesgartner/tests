@@ -68,6 +68,9 @@ const (
 
 // CreateProvisioningCluster provisions a non-rke1 cluster, then runs verify checks
 func CreateProvisioningCluster(client *rancher.Client, provider Provider, credentialSpec cloudcredentials.CloudCredential, clustersConfig *clusters.ClusterConfig, machineConfigSpec machinepools.MachineConfigs, hostnameTruncation []machinepools.HostnameTruncation) (*v1.SteveAPIObject, error) {
+	clusterName := namegen.AppendRandomString(provider.Name.String())
+
+	logrus.Debugf("Creating Cloud credential (%s)", clusterName)
 	cloudCredential, err := provider.CloudCredFunc(client, credentialSpec)
 	if err != nil {
 		return nil, err
@@ -80,12 +83,12 @@ func CreateProvisioningCluster(client *rancher.Client, provider Provider, creden
 		}
 	}
 
-	clusterName := namegen.AppendRandomString(provider.Name.String())
 	generatedPoolName := fmt.Sprintf("nc-%s-pool1-", clusterName)
 	machinePoolConfigs := provider.MachinePoolFunc(machineConfigSpec, generatedPoolName, namespaces.FleetDefault)
 
 	var machinePoolResponses []v1.SteveAPIObject
 
+	logrus.Debugf("Creating Machine Pools (%s)", clusterName)
 	for _, machinePoolConfig := range machinePoolConfigs {
 		machinePoolConfigResp, err := client.Steve.
 			SteveType(provider.MachineConfigPoolResourceSteveType).
@@ -163,6 +166,7 @@ func CreateProvisioningCluster(client *rancher.Client, provider Provider, creden
 		}
 	}
 
+	logrus.Debugf("Creating cluster steve object (%s)", clusterName)
 	_, err = shepherdclusters.CreateK3SRKE2Cluster(client, cluster)
 	if err != nil {
 		return nil, err
