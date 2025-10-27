@@ -118,27 +118,32 @@ func VerifyRKE1Cluster(t *testing.T, client *rancher.Client, clustersConfig *clu
 
 // VerifyClusterReady validates that a non-rke1 cluster and its resources are in a good state, matching a given config.
 func VerifyClusterReady(t *testing.T, client *rancher.Client, cluster *steveV1.SteveAPIObject) {
-	err := kwait.PollUntilContextTimeout(context.TODO(), 10*time.Second, defaults.FifteenMinuteTimeout, true, func(context.Context) (done bool, err error) {
+	err := kwait.PollUntilContextTimeout(context.TODO(), 5*time.Second, defaults.FifteenMinuteTimeout, true, func(context.Context) (done bool, err error) {
 		adminClient, err := client.ReLogin()
 		if err != nil {
-			return false, err
+			logrus.Warningf("Unable to get cluster client (%s) retrying", cluster.Name)
+			return false, nil
 		}
 
 		kubeProvisioningClient, err := adminClient.GetKubeAPIProvisioningClient()
 		if err != nil {
-			return false, err
+			logrus.Warningf("Unable to get cluster kube client (%s) retrying", cluster.Name)
+			return false, nil
 		}
 
 		watchInterface, err := kubeProvisioningClient.Clusters(namespaces.FleetDefault).Watch(context.TODO(), metav1.ListOptions{
 			FieldSelector:  "metadata.name=" + cluster.Name,
 			TimeoutSeconds: &defaults.WatchTimeoutSeconds,
 		})
+		if err != nil {
+			return false, nil
+		}
 
 		checkFunc := shepherdclusters.IsProvisioningClusterReady
 		err = wait.WatchWait(watchInterface, checkFunc)
 		if err != nil {
 			logrus.Warningf("Unable to get cluster status (%s): %v . Retrying", cluster.Name, err)
-			return false, err
+			return false, nil
 		}
 
 		return true, nil
@@ -152,7 +157,7 @@ func VerifyClusterReady(t *testing.T, client *rancher.Client, cluster *steveV1.S
 	logrus.Debugf("Verifying cluster token (%s)", cluster.Name)
 	clusterToken, err := clusters.CheckServiceAccountTokenSecret(client, cluster.Name)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, clusterToken)
+	assert.Equal(t, true, clusterToken)
 }
 
 func VerifyPSACT(t *testing.T, client *rancher.Client, cluster *steveV1.SteveAPIObject) {
@@ -344,11 +349,8 @@ func VerifyACE(t *testing.T, client *rancher.Client, cluster *steveV1.SteveAPIOb
 
 // VerifyHostnameLength validates that the hostnames of the nodes in a cluster are of the correct length
 func VerifyHostnameLength(t *testing.T, client *rancher.Client, clusterObject *steveV1.SteveAPIObject) {
-	client, err := client.ReLogin()
-	assert.NoError(t, err)
-
 	clusterSpec := &provv1.ClusterSpec{}
-	err = steveV1.ConvertToK8sType(clusterObject.Spec, clusterSpec)
+	err := steveV1.ConvertToK8sType(clusterObject.Spec, clusterSpec)
 	assert.NoError(t, err)
 
 	for _, mp := range clusterSpec.RKEConfig.MachinePools {
