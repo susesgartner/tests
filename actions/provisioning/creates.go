@@ -176,16 +176,18 @@ func CreateProvisioningCluster(client *rancher.Client, provider Provider, creden
 		pipeline.UpdateConfigClusterName(clusterName)
 	}
 
-	adminClient, err := rancher.NewClient(client.RancherConfig.AdminToken, client.Session)
-	if err != nil {
-		return nil, err
-	}
-
+	logrus.Debugf("Get cluster object (%s)", clusterName)
 	var createdCluster *v1.SteveAPIObject
-	err = kwait.PollUntilContextTimeout(context.TODO(), 5*time.Second, defaults.OneMinuteTimeout, true, func(ctx context.Context) (done bool, err error) {
+	err = kwait.PollUntilContextTimeout(context.TODO(), 10*time.Second, defaults.FiveMinuteTimeout, false, func(ctx context.Context) (done bool, err error) {
+		adminClient, err := rancher.NewClient(client.RancherConfig.AdminToken, client.Session)
+		if err != nil {
+			logrus.Warningf("Unable to get admin cluster client (%s) retrying", clusterName)
+			return false, nil
+		}
+
 		createdCluster, err = adminClient.Steve.SteveType(stevetypes.Provisioning).ByID(namespaces.FleetDefault + "/" + clusterName)
 		if err != nil {
-			logrus.Warningf("Unable to get cluster (%s): %s . Retrying", clusterName, err.Error())
+			logrus.Warningf("Unable to get cluster (%s) retrying", clusterName)
 			return false, nil
 		}
 
