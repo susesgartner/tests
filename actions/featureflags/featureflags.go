@@ -21,7 +21,7 @@ const (
 	rancherPodProfix = "rancher"
 )
 
-func EnableFeature(client *rancher.Client, name string) error {
+func UpdateFeatureFlag(client *rancher.Client, name string, enabled bool) error {
 	featureOpts := &types.ListOpts{Filters: map[string]interface{}{
 		"name": name,
 	}}
@@ -32,12 +32,11 @@ func EnableFeature(client *rancher.Client, name string) error {
 	}
 
 	for _, feature := range features.Data {
-		enableValue := true
-		if feature.Value != &enableValue {
-			feature.Value = &enableValue
+		if feature.Value != &enabled {
+			feature.Value = &enabled
 		}
 
-		logrus.Debugf("Enabling: %s", feature.Name)
+		logrus.Debugf("Updating: %s state to %v", feature.Name, *feature.Value)
 		client.Management.Feature.Update(&feature, &feature)
 	}
 
@@ -69,7 +68,6 @@ func EnableFeature(client *rancher.Client, name string) error {
 
 		for _, pod := range clusterPods.Data {
 			if strings.Contains(pod.Name, rancherPodProfix) {
-				logrus.Debug(pod.Name)
 				isReady, err := pods.IsPodReady(&pod)
 				if !isReady {
 					restarted = true
