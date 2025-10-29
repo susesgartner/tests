@@ -61,8 +61,8 @@ func VerifyAWSLoadBalancer(t *testing.T, client *rancher.Client, serviceLB *v1.S
 	require.NoError(t, err)
 
 	lbHostname := ""
-	err = kwait.PollUntilContextTimeout(context.TODO(), 5*time.Second, extdefault.OneMinuteTimeout, true, func(ctx context.Context) (done bool, err error) {
-		updateService, err := steveclient.SteveType("service").ByID(serviceLB.ID)
+	err = kwait.PollUntilContextTimeout(context.TODO(), 5*time.Second, extdefault.FiveMinuteTimeout, true, func(ctx context.Context) (done bool, err error) {
+		updateService, err := steveclient.SteveType(stevetypes.Service).ByID(serviceLB.ID)
 		if err != nil {
 			return false, nil
 		}
@@ -81,7 +81,7 @@ func VerifyAWSLoadBalancer(t *testing.T, client *rancher.Client, serviceLB *v1.S
 	})
 	require.NoError(t, err)
 
-	err = kwait.PollUntilContextTimeout(context.TODO(), 5*time.Second, extdefault.FiveMinuteTimeout, true, func(ctx context.Context) (done bool, err error) {
+	err = kwait.PollUntilContextTimeout(context.TODO(), 20*time.Second, extdefault.TenMinuteTimeout, true, func(ctx context.Context) (done bool, err error) {
 		isIngressAccessible, err := ingresses.IsIngressExternallyAccessible(client, lbHostname, "", false)
 		if err != nil {
 			if strings.Contains(err.Error(), noSuchHostSubString) {
