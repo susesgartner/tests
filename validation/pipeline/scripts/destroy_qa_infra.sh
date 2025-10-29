@@ -12,24 +12,26 @@ RANCHER_CLUSTER_MODULE_DIR="tofu/rancher/cluster"
 TFVARS_FILE="cluster.tfvars"
 DOWNSTREAM_TFVARS_FILE="downstream-cluster.tfvars"
 GENERATED_TFVARS_FILE="$REPO_ROOT/ansible/rancher/default-ha/generated.tfvars"
+: "${BUILD_DOWNSTREAM_CLUSTER:=true}"
 
-# --- Rancher Cluster Module Destroy ---
-echo "--- Rancher Cluster Module Destroy ---"
+if [[ "$BUILD_DOWNSTREAM_CLUSTER" == "true" ]]; then
+    # --- Rancher Cluster Module Destroy ---
+    echo "--- Rancher Cluster Module Destroy ---"
 
-terraform -chdir="$RANCHER_CLUSTER_MODULE_DIR" init -input=false || echo "Warning: init for rancher/cluster module failed, destroy may fail."
+    tofu -chdir="$RANCHER_CLUSTER_MODULE_DIR" init -input=false || echo "Warning: init for rancher/cluster module failed, destroy may fail."
 
-# Destroy the Rancher cluster module infrastructure
-terraform -chdir="$RANCHER_CLUSTER_MODULE_DIR" destroy -auto-approve -var-file="$DOWNSTREAM_TFVARS_FILE" -var-file="$GENERATED_TFVARS_FILE"
-if [ $? -ne 0 ]; then
-    echo "Warning: Terraform destroy for rancher/cluster module failed. Continuing with cleanup."
+    # Destroy the Rancher cluster module infrastructure
+    tofu -chdir="$RANCHER_CLUSTER_MODULE_DIR" destroy -auto-approve -var-file="$DOWNSTREAM_TFVARS_FILE" -var-file="$GENERATED_TFVARS_FILE"
+    if [ $? -ne 0 ]; then
+        echo "Warning: Terraform destroy for rancher/cluster module failed. Continuing with cleanup."
+    fi
+
 fi
-
-
 # --- Terraform Steps ---
 echo "--- Terraform Destroy ---"
 
 # Select the Terraform workspace
-terraform -chdir="$TERRAFORM_DIR" workspace select "$WORKSPACE_NAME"
+tofu -chdir="$TERRAFORM_DIR" workspace select "$WORKSPACE_NAME"
 if [ $? -ne 0 ]; then
     echo "Error: Terraform workspace select failed."
     exit 1
@@ -38,7 +40,7 @@ fi
 export TF_WORKSPACE="$WORKSPACE_NAME"
 
 # Destroy the Terraform infrastructure
-terraform -chdir="$TERRAFORM_DIR" destroy -auto-approve -var-file="$TFVARS_FILE"
+tofu -chdir="$TERRAFORM_DIR" destroy -auto-approve -var-file="$TFVARS_FILE"
 if [ $? -ne 0 ]; then
     echo "Error: Terraform destroy failed."
     exit 1
