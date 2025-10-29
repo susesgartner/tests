@@ -235,7 +235,6 @@ jobs:
               zone: "${{ vars.AWS_ZONE_LETTER }}"
               retries: "5"
               rootSize: "${{ vars.AWS_ROOT_SIZE }}"
-              securityGroup: [${{ secrets.AWS_SECURITY_GROUP_NAMES }}]
               iamInstanceProfile: "${{ secrets.AWS_IAM_PROFILE}}"
 
           awsEC2Configs:
@@ -545,7 +544,6 @@ jobs:
               zone: "${{ vars.AWS_ZONE_LETTER }}"
               retries: "5"
               rootSize: "${{ vars.AWS_ROOT_SIZE }}"
-              securityGroup: [${{ secrets.AWS_SECURITY_GROUP_NAMES }}]
               iamInstanceProfile: "${{ secrets.AWS_IAM_PROFILE}}"
 
           awsEC2Configs:
@@ -862,7 +860,6 @@ jobs:
               zone: "${{ vars.AWS_ZONE_LETTER }}"
               retries: "5"
               rootSize: "${{ vars.AWS_ROOT_SIZE }}"
-              securityGroup: [${{ secrets.AWS_SECURITY_GROUP_NAMES_PRIME }}]
               iamInstanceProfile: "${{ secrets.AWS_IAM_PROFILE}}"
 
           awsEC2Configs:
