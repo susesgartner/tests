@@ -8,6 +8,7 @@ import (
 
 	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
+	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults/stevetypes"
 	"github.com/rancher/shepherd/pkg/config"
@@ -29,11 +30,11 @@ import (
 
 type DeleteInitMachineTestSuite struct {
 	suite.Suite
-	client        *rancher.Client
-	session       *session.Session
-	cattleConfig  map[string]any
-	rke2ClusterID string
-	k3sClusterID  string
+	client       *rancher.Client
+	session      *session.Session
+	cattleConfig map[string]any
+	rke2Cluster  *v1.SteveAPIObject
+	k3sCluster   *v1.SteveAPIObject
 }
 
 func (d *DeleteInitMachineTestSuite) TearDownSuite() {
@@ -83,11 +84,11 @@ func (d *DeleteInitMachineTestSuite) SetupSuite() {
 	k3sClusterConfig.MachinePools = nodeRolesStandard
 
 	logrus.Info("Provisioning RKE2 cluster")
-	d.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(d.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, awsEC2Configs, true, false)
+	d.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(d.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, awsEC2Configs, true, false)
 	require.NoError(d.T(), err)
 
 	logrus.Info("Provisioning K3S cluster")
-	d.k3sClusterID, err = resources.ProvisionRKE2K3SCluster(d.T(), standardUserClient, extClusters.K3SClusterType.String(), k3sClusterConfig, awsEC2Configs, true, false)
+	d.k3sCluster, err = resources.ProvisionRKE2K3SCluster(d.T(), standardUserClient, extClusters.K3SClusterType.String(), k3sClusterConfig, awsEC2Configs, true, false)
 	require.NoError(d.T(), err)
 }
 
@@ -96,8 +97,8 @@ func (d *DeleteInitMachineTestSuite) TestDeleteInitMachine() {
 		name      string
 		clusterID string
 	}{
-		{"RKE2_Delete_Init_Machine", d.rke2ClusterID},
-		{"K3S_Delete_Init_Machine", d.k3sClusterID},
+		{"RKE2_Delete_Init_Machine", d.rke2Cluster.ID},
+		{"K3S_Delete_Init_Machine", d.k3sCluster.ID},
 	}
 
 	for _, tt := range tests {

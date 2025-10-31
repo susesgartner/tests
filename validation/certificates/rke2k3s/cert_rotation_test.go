@@ -8,6 +8,7 @@ import (
 
 	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
+	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults/stevetypes"
 	"github.com/rancher/shepherd/pkg/config"
@@ -30,11 +31,11 @@ import (
 
 type CertRotationTestSuite struct {
 	suite.Suite
-	session       *session.Session
-	client        *rancher.Client
-	cattleConfig  map[string]any
-	rke2ClusterID string
-	k3sClusterID  string
+	session      *session.Session
+	client       *rancher.Client
+	cattleConfig map[string]any
+	rke2Cluster  *v1.SteveAPIObject
+	k3sCluster   *v1.SteveAPIObject
 }
 
 func (c *CertRotationTestSuite) TearDownSuite() {
@@ -84,11 +85,11 @@ func (c *CertRotationTestSuite) SetupSuite() {
 	k3sClusterConfig.MachinePools = nodeRolesStandard
 
 	logrus.Info("Provisioning RKE2 cluster")
-	c.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(c.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, awsEC2Configs, true, false)
+	c.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(c.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, awsEC2Configs, true, false)
 	require.NoError(c.T(), err)
 
 	logrus.Info("Provisioning K3S cluster")
-	c.k3sClusterID, err = resources.ProvisionRKE2K3SCluster(c.T(), standardUserClient, extClusters.K3SClusterType.String(), k3sClusterConfig, awsEC2Configs, true, false)
+	c.k3sCluster, err = resources.ProvisionRKE2K3SCluster(c.T(), standardUserClient, extClusters.K3SClusterType.String(), k3sClusterConfig, awsEC2Configs, true, false)
 	require.NoError(c.T(), err)
 
 }
@@ -98,8 +99,8 @@ func (c *CertRotationTestSuite) TestCertRotation() {
 		name      string
 		clusterID string
 	}{
-		{"RKE2_Certificate_Rotation", c.rke2ClusterID},
-		{"K3S_Certificate_Rotation", c.k3sClusterID},
+		{"RKE2_Certificate_Rotation", c.rke2Cluster.ID},
+		{"K3S_Certificate_Rotation", c.k3sCluster.ID},
 	}
 
 	for _, tt := range tests {

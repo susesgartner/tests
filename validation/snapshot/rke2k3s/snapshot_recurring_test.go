@@ -8,6 +8,7 @@ import (
 
 	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
+	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults/stevetypes"
 	"github.com/rancher/shepherd/pkg/config"
@@ -29,11 +30,11 @@ import (
 
 type SnapshotRecurringTestSuite struct {
 	suite.Suite
-	session       *session.Session
-	client        *rancher.Client
-	cattleConfig  map[string]any
-	rke2ClusterID string
-	k3sClusterID  string
+	session      *session.Session
+	client       *rancher.Client
+	cattleConfig map[string]any
+	rke2Cluster  *v1.SteveAPIObject
+	k3sCluster   *v1.SteveAPIObject
 }
 
 func (s *SnapshotRecurringTestSuite) TearDownSuite() {
@@ -83,11 +84,11 @@ func (s *SnapshotRecurringTestSuite) SetupSuite() {
 	k3sClusterConfig.MachinePools = nodeRolesStandard
 
 	logrus.Info("Provisioning RKE2 cluster")
-	s.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, awsEC2Configs, true, false)
+	s.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, awsEC2Configs, true, false)
 	require.NoError(s.T(), err)
 
 	logrus.Info("Provisioning K3S cluster")
-	s.k3sClusterID, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.K3SClusterType.String(), k3sClusterConfig, awsEC2Configs, true, false)
+	s.k3sCluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.K3SClusterType.String(), k3sClusterConfig, awsEC2Configs, true, false)
 	require.NoError(s.T(), err)
 }
 
@@ -103,8 +104,8 @@ func (s *SnapshotRecurringTestSuite) TestSnapshotRecurringRestores() {
 		etcdSnapshot *etcdsnapshot.Config
 		clusterID    string
 	}{
-		{"RKE2_Recurring_Restores", snapshotRestoreFiveTimes, s.rke2ClusterID},
-		{"K3S_Recurring_Restores", snapshotRestoreFiveTimes, s.k3sClusterID},
+		{"RKE2_Recurring_Restores", snapshotRestoreFiveTimes, s.rke2Cluster.ID},
+		{"K3S_Recurring_Restores", snapshotRestoreFiveTimes, s.k3sCluster.ID},
 	}
 
 	for _, tt := range tests {

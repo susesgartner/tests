@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/rancher/shepherd/clients/rancher"
+	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults/stevetypes"
 	"github.com/rancher/shepherd/pkg/config"
@@ -32,10 +33,10 @@ const (
 
 type SnapshotIPv6RestoreTestSuite struct {
 	suite.Suite
-	session       *session.Session
-	client        *rancher.Client
-	cattleConfig  map[string]any
-	rke2ClusterID string
+	session      *session.Session
+	client       *rancher.Client
+	cattleConfig map[string]any
+	rke2Cluster  *v1.SteveAPIObject
 }
 
 func (s *SnapshotIPv6RestoreTestSuite) TearDownSuite() {
@@ -84,7 +85,7 @@ func (s *SnapshotIPv6RestoreTestSuite) SetupSuite() {
 	rke2ClusterConfig.MachinePools = nodeRolesStandard
 
 	logrus.Info("Provisioning RKE2 cluster")
-	s.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, nil, false, false)
+	s.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, nil, false, false)
 	require.NoError(s.T(), err)
 }
 
@@ -118,9 +119,9 @@ func (s *SnapshotIPv6RestoreTestSuite) TestSnapshotIPv6Restore() {
 		etcdSnapshot *etcdsnapshot.Config
 		clusterID    string
 	}{
-		{"RKE2_IPv6_Restore_ETCD", snapshotRestoreConfigRKE2[0], s.rke2ClusterID},
-		{"RKE2_IPv6_Restore_ETCD_K8sVersion", snapshotRestoreConfigRKE2[1], s.rke2ClusterID},
-		{"RKE2_IPv6_Restore_Upgrade_Strategy", snapshotRestoreConfigRKE2[2], s.rke2ClusterID},
+		{"RKE2_IPv6_Restore_ETCD", snapshotRestoreConfigRKE2[0], s.rke2Cluster.ID},
+		{"RKE2_IPv6_Restore_ETCD_K8sVersion", snapshotRestoreConfigRKE2[1], s.rke2Cluster.ID},
+		{"RKE2_IPv6_Restore_Upgrade_Strategy", snapshotRestoreConfigRKE2[2], s.rke2Cluster.ID},
 	}
 
 	for _, tt := range tests {

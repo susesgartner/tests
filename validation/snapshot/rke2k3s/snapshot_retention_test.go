@@ -9,6 +9,7 @@ import (
 
 	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
+	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults/namespaces"
 	"github.com/rancher/shepherd/extensions/defaults/stevetypes"
@@ -32,8 +33,8 @@ type SnapshotRetentionTestSuite struct {
 	session        *session.Session
 	client         *rancher.Client
 	cattleConfig   map[string]any
-	rke2ClusterID  string
-	k3sClusterID   string
+	rke2Cluster    *v1.SteveAPIObject
+	k3sCluster     *v1.SteveAPIObject
 	snapshotConfig *SnapshotRetentionConfig
 }
 
@@ -90,11 +91,11 @@ func (s *SnapshotRetentionTestSuite) SetupSuite() {
 	k3sClusterConfig.MachinePools = nodeRolesStandard
 
 	logrus.Info("Provisioning RKE2 cluster")
-	s.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, awsEC2Configs, true, false)
+	s.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, awsEC2Configs, true, false)
 	require.NoError(s.T(), err)
 
 	logrus.Info("Provisioning K3S cluster")
-	s.k3sClusterID, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.K3SClusterType.String(), k3sClusterConfig, awsEC2Configs, true, false)
+	s.k3sCluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.K3SClusterType.String(), k3sClusterConfig, awsEC2Configs, true, false)
 	require.NoError(s.T(), err)
 }
 
@@ -105,8 +106,8 @@ func (s *SnapshotRetentionTestSuite) TestAutomaticSnapshotRetention() {
 		retentionLimit           int
 		intervalBetweenSnapshots int
 	}{
-		{"RKE2_Retention_Limit", s.rke2ClusterID, 2, 1},
-		{"K3S_Retention_Limit", s.k3sClusterID, 2, 1},
+		{"RKE2_Retention_Limit", s.rke2Cluster.ID, 2, 1},
+		{"K3S_Retention_Limit", s.k3sCluster.ID, 2, 1},
 	}
 
 	for _, tt := range tests {

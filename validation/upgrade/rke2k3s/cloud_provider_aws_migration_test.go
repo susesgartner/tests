@@ -8,6 +8,7 @@ import (
 
 	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
+	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults/namespaces"
 	"github.com/rancher/shepherd/extensions/defaults/stevetypes"
@@ -33,7 +34,7 @@ type MigrateCloudProviderSuite struct {
 	standardUserClient *rancher.Client
 	cattleConfig       map[string]any
 	clusterConfig      *clusters.ClusterConfig
-	rke2ClusterID      string
+	rke2Cluster        *v1.SteveAPIObject
 }
 
 func (u *MigrateCloudProviderSuite) TearDownSuite() {
@@ -79,7 +80,7 @@ func (u *MigrateCloudProviderSuite) SetupSuite() {
 	u.clusterConfig.MachinePools = nodeRolesStandard
 
 	logrus.Info("Provisioning RKE2 cluster")
-	u.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(u.T(), u.standardUserClient, extClusters.RKE2ClusterType.String(), u.clusterConfig, awsEC2Configs, true, false)
+	u.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(u.T(), u.standardUserClient, extClusters.RKE2ClusterType.String(), u.clusterConfig, awsEC2Configs, true, false)
 	require.NoError(u.T(), err)
 }
 
@@ -88,7 +89,7 @@ func (u *MigrateCloudProviderSuite) TestAWS() {
 		name      string
 		clusterID string
 	}{
-		{"RKE2 AWS migration", u.rke2ClusterID},
+		{"RKE2 AWS migration", u.rke2Cluster.ID},
 	}
 
 	for _, tt := range tests {

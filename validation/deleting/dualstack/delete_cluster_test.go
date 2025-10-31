@@ -8,6 +8,7 @@ import (
 
 	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
+	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/config/operations"
@@ -27,11 +28,11 @@ import (
 
 type DeleteDualstackClusterTestSuite struct {
 	suite.Suite
-	session       *session.Session
-	client        *rancher.Client
-	cattleConfig  map[string]any
-	rke2ClusterID string
-	k3sClusterID  string
+	session      *session.Session
+	client       *rancher.Client
+	cattleConfig map[string]any
+	rke2Cluster  *v1.SteveAPIObject
+	k3sCluster   *v1.SteveAPIObject
 }
 
 func (d *DeleteDualstackClusterTestSuite) TearDownSuite() {
@@ -93,11 +94,11 @@ func (d *DeleteDualstackClusterTestSuite) SetupSuite() {
 	operations.LoadObjectFromMap(ec2.ConfigurationFileKey, d.cattleConfig, awsEC2Configs)
 
 	logrus.Info("Provisioning RKE2 cluster")
-	d.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(d.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, awsEC2Configs, true, true)
+	d.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(d.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, awsEC2Configs, true, true)
 	require.NoError(d.T(), err)
 
 	logrus.Info("Provisioning K3S cluster")
-	d.k3sClusterID, err = resources.ProvisionRKE2K3SCluster(d.T(), standardUserClient, extClusters.K3SClusterType.String(), k3sClusterConfig, awsEC2Configs, true, true)
+	d.k3sCluster, err = resources.ProvisionRKE2K3SCluster(d.T(), standardUserClient, extClusters.K3SClusterType.String(), k3sClusterConfig, awsEC2Configs, true, true)
 	require.NoError(d.T(), err)
 }
 
@@ -106,8 +107,8 @@ func (d *DeleteDualstackClusterTestSuite) TestDeletingDualstackCluster() {
 		name      string
 		clusterID string
 	}{
-		{"RKE2_Delete_Dualstack_Cluster", d.rke2ClusterID},
-		{"K3S_Delete_Dualstack_Cluster", d.k3sClusterID},
+		{"RKE2_Delete_Dualstack_Cluster", d.rke2Cluster.ID},
+		{"K3S_Delete_Dualstack_Cluster", d.k3sCluster.ID},
 	}
 
 	for _, tt := range tests {

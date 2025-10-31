@@ -36,7 +36,7 @@ type UpgradeIPv6KubernetesTestSuite struct {
 	client            *rancher.Client
 	cattleConfig      map[string]any
 	rke2ClusterConfig *clusters.ClusterConfig
-	rke2ClusterID     string
+	rke2Cluster       *v1.SteveAPIObject
 }
 
 func (u *UpgradeIPv6KubernetesTestSuite) TearDownSuite() {
@@ -85,7 +85,7 @@ func (u *UpgradeIPv6KubernetesTestSuite) SetupSuite() {
 	u.rke2ClusterConfig.MachinePools = nodeRolesStandard
 
 	logrus.Info("Provisioning RKE2 cluster")
-	u.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(u.T(), standardUserClient, extClusters.RKE2ClusterType.String(), u.rke2ClusterConfig, nil, false, false)
+	u.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(u.T(), standardUserClient, extClusters.RKE2ClusterType.String(), u.rke2ClusterConfig, nil, false, false)
 	require.NoError(u.T(), err)
 }
 
@@ -96,7 +96,7 @@ func (u *UpgradeIPv6KubernetesTestSuite) TestUpgradeIPv6Kubernetes() {
 		clusterConfig *clusters.ClusterConfig
 		clusterType   string
 	}{
-		{"Upgrading_RKE2_IPv6_cluster", u.rke2ClusterID, u.rke2ClusterConfig, extClusters.RKE2ClusterType.String()},
+		{"Upgrading_RKE2_IPv6_cluster", u.rke2Cluster.ID, u.rke2ClusterConfig, extClusters.RKE2ClusterType.String()},
 	}
 
 	for _, tt := range tests {

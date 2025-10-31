@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/rancher/shepherd/clients/rancher"
+	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults/stevetypes"
 	"github.com/rancher/shepherd/pkg/config"
@@ -29,10 +30,10 @@ import (
 
 type DeleteInitMachineIPv6TestSuite struct {
 	suite.Suite
-	client        *rancher.Client
-	session       *session.Session
-	cattleConfig  map[string]any
-	rke2ClusterID string
+	client       *rancher.Client
+	session      *session.Session
+	cattleConfig map[string]any
+	rke2Cluster  *v1.SteveAPIObject
 }
 
 func (d *DeleteInitMachineIPv6TestSuite) TearDownSuite() {
@@ -81,7 +82,7 @@ func (d *DeleteInitMachineIPv6TestSuite) SetupSuite() {
 	rke2ClusterConfig.MachinePools = nodeRolesStandard
 
 	logrus.Info("Provisioning RKE2 cluster")
-	d.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(d.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, nil, true, false)
+	d.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(d.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, nil, true, false)
 	require.NoError(d.T(), err)
 }
 
@@ -90,7 +91,7 @@ func (d *DeleteInitMachineIPv6TestSuite) TestDeleteInitMachineIPv6() {
 		name      string
 		clusterID string
 	}{
-		{"RKE2_IPv6_Delete_Init_Machine", d.rke2ClusterID},
+		{"RKE2_IPv6_Delete_Init_Machine", d.rke2Cluster.ID},
 	}
 
 	for _, tt := range tests {

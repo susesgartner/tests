@@ -8,6 +8,7 @@ import (
 
 	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
+	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults/stevetypes"
 	"github.com/rancher/shepherd/pkg/config"
@@ -33,11 +34,11 @@ const (
 
 type SnapshotDualstackRestoreTestSuite struct {
 	suite.Suite
-	session       *session.Session
-	client        *rancher.Client
-	cattleConfig  map[string]any
-	rke2ClusterID string
-	k3sClusterID  string
+	session      *session.Session
+	client       *rancher.Client
+	cattleConfig map[string]any
+	rke2Cluster  *v1.SteveAPIObject
+	k3sCluster   *v1.SteveAPIObject
 }
 
 func (s *SnapshotDualstackRestoreTestSuite) TearDownSuite() {
@@ -99,11 +100,11 @@ func (s *SnapshotDualstackRestoreTestSuite) SetupSuite() {
 	operations.LoadObjectFromMap(ec2.ConfigurationFileKey, s.cattleConfig, awsEC2Configs)
 
 	logrus.Info("Provisioning RKE2 cluster")
-	s.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, awsEC2Configs, false, true)
+	s.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, awsEC2Configs, false, true)
 	require.NoError(s.T(), err)
 
 	logrus.Info("Provisioning K3S cluster")
-	s.k3sClusterID, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.K3SClusterType.String(), k3sClusterConfig, awsEC2Configs, false, true)
+	s.k3sCluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.K3SClusterType.String(), k3sClusterConfig, awsEC2Configs, false, true)
 	require.NoError(s.T(), err)
 }
 
@@ -137,12 +138,12 @@ func (s *SnapshotDualstackRestoreTestSuite) TestSnapshotDualstackRestore() {
 		etcdSnapshot *etcdsnapshot.Config
 		clusterID    string
 	}{
-		{"RKE2_Dualstack_Restore_ETCD", snapshotRestoreConfigRKE2[0], s.rke2ClusterID},
-		{"RKE2_Dualstack_Restore_ETCD_K8sVersion", snapshotRestoreConfigRKE2[1], s.rke2ClusterID},
-		{"RKE2_Dualstack_Restore_Upgrade_Strategy", snapshotRestoreConfigRKE2[2], s.rke2ClusterID},
-		{"K3S_Dualstack_Restore_ETCD", snapshotRestoreConfigK3s[0], s.k3sClusterID},
-		{"K3S_Dualstack_Restore_ETCD_K8sVersion", snapshotRestoreConfigK3s[1], s.k3sClusterID},
-		{"K3S_Dualstack_Restore_Upgrade_Strategy", snapshotRestoreConfigK3s[2], s.k3sClusterID},
+		{"RKE2_Dualstack_Restore_ETCD", snapshotRestoreConfigRKE2[0], s.rke2Cluster.ID},
+		{"RKE2_Dualstack_Restore_ETCD_K8sVersion", snapshotRestoreConfigRKE2[1], s.rke2Cluster.ID},
+		{"RKE2_Dualstack_Restore_Upgrade_Strategy", snapshotRestoreConfigRKE2[2], s.rke2Cluster.ID},
+		{"K3S_Dualstack_Restore_ETCD", snapshotRestoreConfigK3s[0], s.k3sCluster.ID},
+		{"K3S_Dualstack_Restore_ETCD_K8sVersion", snapshotRestoreConfigK3s[1], s.k3sCluster.ID},
+		{"K3S_Dualstack_Restore_Upgrade_Strategy", snapshotRestoreConfigK3s[2], s.k3sCluster.ID},
 	}
 
 	for _, tt := range tests {

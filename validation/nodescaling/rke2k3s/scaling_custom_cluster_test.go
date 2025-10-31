@@ -8,6 +8,7 @@ import (
 
 	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
+	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults/stevetypes"
 	"github.com/rancher/shepherd/pkg/config"
@@ -38,8 +39,8 @@ type CustomClusterNodeScalingTestSuite struct {
 	k3sClusterConfig  *clusters.ClusterConfig
 	scalingConfig     *scalinginput.Config
 	cattleConfig      map[string]any
-	rke2ClusterID     string
-	k3sClusterID      string
+	rke2Cluster       *v1.SteveAPIObject
+	k3sCluster        *v1.SteveAPIObject
 }
 
 func (s *CustomClusterNodeScalingTestSuite) TearDownSuite() {
@@ -92,11 +93,11 @@ func (s *CustomClusterNodeScalingTestSuite) SetupSuite() {
 	s.k3sClusterConfig.MachinePools = nodeRolesStandard
 
 	logrus.Info("Provisioning RKE2 cluster")
-	s.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), s.rke2ClusterConfig, awsEC2Configs, true, true)
+	s.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), s.rke2ClusterConfig, awsEC2Configs, true, true)
 	require.NoError(s.T(), err)
 
 	logrus.Info("Provisioning K3S cluster")
-	s.k3sClusterID, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.K3SClusterType.String(), s.k3sClusterConfig, awsEC2Configs, true, true)
+	s.k3sCluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.K3SClusterType.String(), s.k3sClusterConfig, awsEC2Configs, true, true)
 	require.NoError(s.T(), err)
 }
 
@@ -133,15 +134,15 @@ func (s *CustomClusterNodeScalingTestSuite) TestScalingCustomClusterNodes() {
 		clusterID     string
 		clusterConfig *clusters.ClusterConfig
 	}{
-		{"RKE2_Custom_Scale_Control_Plane", nodeRolesControlPlane, s.rke2ClusterID, s.rke2ClusterConfig},
-		{"RKE2_Custom_Scale_ETCD", nodeRolesEtcd, s.rke2ClusterID, s.rke2ClusterConfig},
-		{"RKE2_Custom_Scale_Control_Plane_ETCD", nodeRolesEtcdControlPlane, s.rke2ClusterID, s.rke2ClusterConfig},
-		{"RKE2_Custom_Scale_Worker", nodeRolesWorker, s.rke2ClusterID, s.rke2ClusterConfig},
-		{"RKE2_Custom_Scale_Windows", nodeRolesWindows, s.rke2ClusterID, s.rke2ClusterConfig},
-		{"K3S_Custom_Scale_Control_Plane", nodeRolesControlPlane, s.k3sClusterID, s.k3sClusterConfig},
-		{"K3S_Custom_Scale_ETCD", nodeRolesEtcd, s.k3sClusterID, s.k3sClusterConfig},
-		{"K3S_Custom_Scale_Control_Plane_ETCD", nodeRolesEtcdControlPlane, s.k3sClusterID, s.k3sClusterConfig},
-		{"K3S_Custom_Scale_Worker", nodeRolesWorker, s.k3sClusterID, s.k3sClusterConfig},
+		{"RKE2_Custom_Scale_Control_Plane", nodeRolesControlPlane, s.rke2Cluster.ID, s.rke2ClusterConfig},
+		{"RKE2_Custom_Scale_ETCD", nodeRolesEtcd, s.rke2Cluster.ID, s.rke2ClusterConfig},
+		{"RKE2_Custom_Scale_Control_Plane_ETCD", nodeRolesEtcdControlPlane, s.rke2Cluster.ID, s.rke2ClusterConfig},
+		{"RKE2_Custom_Scale_Worker", nodeRolesWorker, s.rke2Cluster.ID, s.rke2ClusterConfig},
+		{"RKE2_Custom_Scale_Windows", nodeRolesWindows, s.rke2Cluster.ID, s.rke2ClusterConfig},
+		{"K3S_Custom_Scale_Control_Plane", nodeRolesControlPlane, s.k3sCluster.ID, s.k3sClusterConfig},
+		{"K3S_Custom_Scale_ETCD", nodeRolesEtcd, s.k3sCluster.ID, s.k3sClusterConfig},
+		{"K3S_Custom_Scale_Control_Plane_ETCD", nodeRolesEtcdControlPlane, s.k3sCluster.ID, s.k3sClusterConfig},
+		{"K3S_Custom_Scale_Worker", nodeRolesWorker, s.k3sCluster.ID, s.k3sClusterConfig},
 	}
 
 	for _, tt := range tests {

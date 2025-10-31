@@ -8,6 +8,7 @@ import (
 
 	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
+	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults/stevetypes"
 	"github.com/rancher/shepherd/pkg/config"
@@ -29,11 +30,11 @@ import (
 
 type AutoReplaceSuite struct {
 	suite.Suite
-	client        *rancher.Client
-	session       *session.Session
-	cattleConfig  map[string]any
-	rke2ClusterID string
-	k3sClusterID  string
+	client       *rancher.Client
+	session      *session.Session
+	cattleConfig map[string]any
+	rke2Cluster  *v1.SteveAPIObject
+	k3sCluster   *v1.SteveAPIObject
 }
 
 func (s *AutoReplaceSuite) TearDownSuite() {
@@ -79,11 +80,11 @@ func (s *AutoReplaceSuite) SetupSuite() {
 	clusterConfig.MachinePools = nodeRolesStandard
 
 	logrus.Info("Provisioning RKE2 cluster")
-	s.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), clusterConfig, awsEC2Configs, true, false)
+	s.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), clusterConfig, awsEC2Configs, true, false)
 	require.NoError(s.T(), err)
 
 	logrus.Info("Provisioning K3S cluster")
-	s.k3sClusterID, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.K3SClusterType.String(), clusterConfig, awsEC2Configs, true, false)
+	s.k3sCluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.K3SClusterType.String(), clusterConfig, awsEC2Configs, true, false)
 	require.NoError(s.T(), err)
 }
 
@@ -93,12 +94,12 @@ func (s *AutoReplaceSuite) TestAutoReplace() {
 		role      string
 		clusterID string
 	}{
-		{"Auto_replace_RKE2_ETCD", "etcd", s.rke2ClusterID},
-		{"Auto_replace_RKE2_controlplane", "control-plane", s.rke2ClusterID},
-		{"Auto_replace_RKE2_worker", "worker", s.rke2ClusterID},
-		{"Auto_replace_K3S_ETCD", "etcd", s.k3sClusterID},
-		{"Auto_replace_K3S_controlplane", "control-plane", s.k3sClusterID},
-		{"Auto_replace_K3S_worker", "worker", s.k3sClusterID},
+		{"Auto_replace_RKE2_ETCD", "etcd", s.rke2Cluster.ID},
+		{"Auto_replace_RKE2_controlplane", "control-plane", s.rke2Cluster.ID},
+		{"Auto_replace_RKE2_worker", "worker", s.rke2Cluster.ID},
+		{"Auto_replace_K3S_ETCD", "etcd", s.k3sCluster.ID},
+		{"Auto_replace_K3S_controlplane", "control-plane", s.k3sCluster.ID},
+		{"Auto_replace_K3S_worker", "worker", s.k3sCluster.ID},
 	}
 
 	for _, tt := range tests {
