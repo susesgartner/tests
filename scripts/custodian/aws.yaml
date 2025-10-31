@@ -1,4 +1,6 @@
 policies:
+
+# Instances
 - name: mark-unknown-instances-for-deletion
   resource: aws.ec2
   description: |
@@ -200,17 +202,6 @@ policies:
       tag: ec2_unknown_user
       op: delete
       days: 1
-    ### option for notifying slack / via email (needs lambda permissions)
-    # - type: notify
-    #   slack_template: slack_default
-    #   slack_msg_color: danger
-    #   violation_desc: No violation.
-    #   action_desc: No action taken. 
-    #   to:
-    #     - https://hooks.slack.com/services/T0000000000/B000000000/XXXXXXXXXXXXXXX
-    #   transport:
-    #     type: sqs
-    #     queue: queue-url
 
 - name: mark-known-nlbs-for-deletion
   resource: app-elb
@@ -253,6 +244,88 @@ policies:
 
 - name: ec2-delete-nlbs
   resource: app-elb
+  description: |
+    Delete any marked nlbs which have been 
+    marked for deletion for more than 1 day.
+  filters:
+    - or:
+      - type: marked-for-op
+        tag: ec2_unknown_user
+        op: delete
+      - type: marked-for-op
+        tag: ec2_known_user
+        op: delete
+  actions:
+    - type: delete
+
+# Classic LBs
+- name: mark-unknown-classic-nlbs-for-deletion
+  resource: elb
+  filters:
+    # nlb name not in accepted user keys
+    - type: value
+      key: LoadBalancerName
+      op: regex
+      #doesNOTcontain
+      value:  "^((?!USERKEYS).)*$"
+    # instance is not doNotDelete
+    - 'tag:doNotDelete': absent
+    - 'tag:DoNotDelete': absent
+    - 'tag:ec2_known_user': absent
+    - "tag:ec2_unknown_user": absent
+    - "tag:DeletesOnFriday": absent
+    - not: 
+      - type: value
+        key: LoadBalancerName
+        op: regex
+        value:  "^.*DONOTDELETEKEYS.*$"
+  actions:
+    - type: mark-for-op
+      tag: ec2_unknown_user
+      op: delete
+      days: 1
+
+- name: mark-known-classc-nlbs-for-deletion
+  resource: elb
+  filters:
+    # nlb is named with accepted user key
+    - type: value
+      key: LoadBalancerName
+      op: regex
+      value:  "^.*USERKEYS.*$"
+    # nlb is not doNotDelete
+    - 'tag:doNotDelete': absent
+    - 'tag:DoNotDelete': absent
+    - "tag:ec2_unknown_user": absent
+    - "tag:ec2_known_user": absent
+    - "tag:DeletesOnFriday": absent
+    - not: 
+      - type: value
+        key: LoadBalancerName
+        op: regex
+        value:  "^.*DONOTDELETEKEYS.*$"
+  actions:
+    - type: mark-for-op
+      tag: ec2_known_user
+      op: delete
+      days: 2
+
+- name: classic-nlb-unmark-if-friday-tagged
+  resource: elb
+  description: |
+    Remove the deletion tag from any resource group which now contain resources
+    so it doesn't get deleted by the following policy
+  filters:
+    - or:
+      - "tag:ec2_unknown_user": not-null
+      - "tag:ec2_known_user": not-null
+    - "tag:DeletesOnFriday": present
+  actions:
+    - type: remove-tag
+      tags: ['ec2_unknown_user', 'ec2_known_user']
+
+- name: ec2-delete-classic-nlbs
+  resource: elb
   description: |
     Delete any marked nlbs which have been 
     marked for deletion for more than 1 day.

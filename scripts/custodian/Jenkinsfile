@@ -15,6 +15,7 @@ node("vsphere-vpn-1") {
   def azureYaml = "azure.yaml"
   def gcpYaml = "gcp.yaml"
   def linodeScript = "linode.sh"
+  def awsMonthly = "aws-monthly.yaml"
   if ("${env.CUSTODIAN_YAML}" != "null" && "${env.CUSTODIAN_YAML}" != "") {
     yamlToRun = "${env.CUSTODIAN_YAML}"
   }
@@ -38,6 +39,10 @@ node("vsphere-vpn-1") {
     withEnv(paramsMap) {
       withCredentials([string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
         string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY'),
+
+        string(credentialsId: 'QA_IAM_WEBHOOK', variable: 'QA_IAM_WEBHOOK'),
+        string(credentialsId: 'SQS_URL', variable: 'SQS_URL'),
+        string(credentialsId: 'ARN_ROLE', variable: 'ARN_ROLE'),
 
         string(credentialsId: 'DONOTDELETE_KEYS', variable: 'DONOTDELETE_KEYS'),
         string(credentialsId: 'USER_KEYS', variable: 'USER_KEYS'),
@@ -73,11 +78,20 @@ node("vsphere-vpn-1") {
                 writeFile file: 'google_credentials.json', text: decoded
                 sh returnStdout: true, script: 'wget -qO ./jq https://github.com/jqlang/jq/releases/latest/download/jq-linux-amd64'
                 sh returnStdout:true, script: 'chmod a+x ./jq'
-                sh "docker build -t ${imageName} -f Dockerfile . --build-arg AWS_ACCESS_KEY_ID=\"${AWS_ACCESS_KEY_ID}\" \
-                 --build-arg AWS_SECRET_ACCESS_KEY=\"${AWS_SECRET_ACCESS_KEY}\" --build-arg AZURE_AKS_SUBSCRIPTION_ID=\"${AZURE_AKS_SUBSCRIPTION_ID}\" \
-                 --build-arg AZURE_TENANT_ID=\"${AZURE_TENANT_ID}\" --build-arg AZURE_CLIENT_ID=\"${AZURE_CLIENT_ID}\" \
-                 --build-arg AZURE_CLIENT_SECRET=\"${AZURE_CLIENT_SECRET}\" --build-arg RANCHER_LINODE_ACCESSKEY=\"${RANCHER_LINODE_ACCESSKEY}\" \
-                 --build-arg GOOGLE_CLOUD_PROJECT=\"${GOOGLE_CLOUD_PROJECT}\""
+                sh """
+docker build -t ${imageName} -f Dockerfile . \
+  --build-arg AWS_ACCESS_KEY_ID='${AWS_ACCESS_KEY_ID}' \
+  --build-arg AWS_SECRET_ACCESS_KEY='${AWS_SECRET_ACCESS_KEY}' \
+  --build-arg AZURE_AKS_SUBSCRIPTION_ID='${AZURE_AKS_SUBSCRIPTION_ID}' \
+  --build-arg AZURE_TENANT_ID='${AZURE_TENANT_ID}' \
+  --build-arg AZURE_CLIENT_ID='${AZURE_CLIENT_ID}' \
+  --build-arg AZURE_CLIENT_SECRET='${AZURE_CLIENT_SECRET}' \
+  --build-arg RANCHER_LINODE_ACCESSKEY='${RANCHER_LINODE_ACCESSKEY}' \
+  --build-arg GOOGLE_CLOUD_PROJECT='${GOOGLE_CLOUD_PROJECT}' \
+  --build-arg QA_IAM_WEBHOOK='${QA_IAM_WEBHOOK}' \
+  --build-arg SQS_URL='${SQS_URL}' \
+  --build-arg ARN_ROLE='${ARN_ROLE}'
+"""
               } catch (err) {
                 echo 'Docker Build had partial failures...'
                 echo "${err}"
@@ -86,20 +100,22 @@ node("vsphere-vpn-1") {
             stage('Run Docker Image for Adding Tags') {
               // if a user only wants to run the test using a subset of keys, they can pass in OVERRIDE_REGION
               if ("${env.OVERRIDE_REGION}" != "null" && "${env.OVERRIDE_REGION}" != "") {
-                sh "docker run --privileged --name ${testContainer} -e CUSTODIAN_YAML=\"tag-to-save.yaml\" -e OVERRIDE_REGION=\"${env.OVERRIDE_REGION}\" -e DONOTDELETE_KEYS=\"${DONOTDELETE_KEYS}\" -e USER_KEYS=\"${TAG_USER_KEYS}\" ${imageName} "
-              } else {
-                echo "No OVERRIDE_REGION passed in, running all tests"
+                sh "docker run --privileged --name ${testContainer} -e CUSTODIAN_YAML=\"tag-to-save.yaml\" -e OVERRIDE_REGION=\"${env.OVERRIDE_REGION}\" -e DONOTDELETE_KEYS=\"${DONOTDELETE_KEYS}\" -e QA_IAM_WEBHOOK=\"${QA_IAM_WEBHOOK}\" -e USER_KEYS=\"${TAG_USER_KEYS}\" ${imageName} "
               }
             }
+
             stage('Run Docker Image for AWS, Azure, GCP, and Linode') {
-              if ("${CUSTODIAN_YAML}" != "${linodeScript}") {
-                sh "docker run --privileged --name ${testContainer} -e CUSTODIAN_YAML=\"${CUSTODIAN_YAML}\" -e DONOTDELETE_KEYS=\"${DONOTDELETE_KEYS}\" -e USER_KEYS=\"${USER_KEYS}\" ${imageName}"
+              if ("${CUSTODIAN_YAML}" != "${linodeScript}" && "${CUSTODIAN_YAML}" != "${awsMonthly}") {
+                sh "docker run --privileged --name ${testContainer} -e CUSTODIAN_YAML=\"${CUSTODIAN_YAML}\" -e DONOTDELETE_KEYS=\"${DONOTDELETE_KEYS}\" -e QA_IAM_WEBHOOK=\"${QA_IAM_WEBHOOK}\" -e USER_KEYS=\"${USER_KEYS}\" ${imageName}"
+              } else if ("${CUSTODIAN_YAML}" == "${awsMonthly}") {
+                sh "docker run --privileged --name ${testContainer} -e CUSTODIAN_YAML=\"${awsMonthly}\" -e OVERRIDE_REGION=\"us-east-2\" -e DONOTDELETE_KEYS=\"${DONOTDELETE_KEYS}\" -e QA_IAM_WEBHOOK=\"${QA_IAM_WEBHOOK}\" -e USER_KEYS=\"${USER_KEYS}\" ${imageName} "
               } else {
                 sh ". ${linodeScript}"
               }
             }
           } catch (err) {
             echo "error during custodian run"
+            echo "${err}"
           }
 
           sh "docker stop ${testContainer}"

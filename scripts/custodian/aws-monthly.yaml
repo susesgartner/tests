@@ -1,0 +1,22 @@
+policies:
+- name: iam-qa-aws-key-too-old
+  resource: iam-user
+  filters:
+    - type: credential
+      key: access_keys.active
+      value: true
+    - type: credential
+      key: access_keys.last_rotated
+      value_type: age
+      value: 90
+      op: greater-than
+  actions:
+    - type: notify
+      template: aws-iam-email-template
+      priority_header: '2'
+      subject: AWS Rancher QA Org -- Access Key Policy Violations
+      to:
+        - ecm-qase@suse.com
+      transport:
+        type: sqs
+        queue: SQSURL

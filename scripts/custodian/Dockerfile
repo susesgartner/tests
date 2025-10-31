@@ -15,6 +15,14 @@ ARG AZURE_CLIENT_SECRET
 ENV AZURE_CLIENT_SECRET=$AZURE_CLIENT_SECRET
 ARG RANCHER_LINODE_ACCESSKEY
 ENV RANCHER_LINODE_CREDENTIAL=$RANCHER_LINODE_ACCESSKEY
+
+ARG SQS_URL
+ENV SQS_URL=$SQS_URL
+ARG ARN_ROLE
+ENV ARN_ROLE=$ARN_ROLE
+ARG QA_IAM_WEBHOOK
+ENV QA_IAM_WEBHOOK=$QA_IAM_WEBHOOK
+
 ENV TZ="America/New_York date"
 
 ARG OVERRIDE_REGION
@@ -24,6 +32,7 @@ ARG USER_KEYS
 ENV USER_KEYS=$USER_KEYS
 ARG DONOTDELETE_KEYS
 ENV DONOTDELETE_KEYS=$DONOTDELETE_KEYS
+
 
 ENV CUSTODIAN_YAML=aws.yaml
 
@@ -47,16 +56,26 @@ RUN pip3 install c7n c7n_azure c7n_gcp c7n_mailer --break-system-packages
 RUN az login -u ${AZURE_CLIENT_ID} --service-principal -p ${AZURE_CLIENT_SECRET} --tenant ${AZURE_TENANT_ID} > /dev/null
 RUN gcloud auth activate-service-account --key-file $GOOGLE_APPLICATION_CREDENTIALS > /dev/null
 
-CMD for i in `ls *.yaml`; \
-    do cat $i | sed -e 's/USERKEYS/'"${USER_KEYS}"'/g' -i $i; done ; \
-    echo $USER_KEYS; \
-    for i in `ls *.yaml`; \
-    do cat $i | sed -e 's/DONOTDELETEKEYS/'"${DONOTDELETE_KEYS}"'/g' -i $i; done; \
-    if [ "$CUSTODIAN_YAML" = "aws.yaml" ] || [ "$CUSTODIAN_YAML" = "untag-to-delete.yaml" ] ; then \
-    custodian run --output-dir=. --region="us-east-2" ${CUSTODIAN_YAML}; \
-    custodian run --output-dir=. --region="us-east-1" ${CUSTODIAN_YAML}; \
-    custodian run --output-dir=. --region="us-west-1" ${CUSTODIAN_YAML}; \
-    custodian run --output-dir=. --region="us-west-2" ${CUSTODIAN_YAML}; \
-    elif [ "$CUSTODIAN_YAML" = "tag-to-save.yaml" ] ; then \
-    custodian run --output-dir=. --region=$OVERRIDE_REGION ${CUSTODIAN_YAML};  \
-    else custodian run --output-dir=. ${CUSTODIAN_YAML}; fi; 
+RUN echo "queue_url: ${SQS_URL}" > mailer.yml
+RUN echo "role: ${ARN_ROLE}" >> mailer.yml
+RUN echo "region: us-east-2" >> mailer.yml
+RUN echo "from_address: caleb.warren@suse.com" >> mailer.yml
+
+CMD set -e; \
+    for i in *.yaml; do \
+        sed -i "s/USERKEYS/${USER_KEYS}/g" "$i"; \
+        sed -i "s/DONOTDELETEKEYS/${DONOTDELETE_KEYS}/g" "$i"; \
+        sed -i "s|SQSURL|${SQS_URL}|g" "$i"; \
+        sed -i "s|QAIAMWEBHOOK|${QA_IAM_WEBHOOK}|g" "$i"; \
+    done; \
+    echo "Using USER_KEYS=${USER_KEYS}"; \
+    if [ "$CUSTODIAN_YAML" = "aws.yaml" ] || [ "$CUSTODIAN_YAML" = "untag-to-delete.yaml" ]; then \
+        for region in us-east-2 us-east-1 us-west-1 us-west-2; do \
+            custodian run --output-dir=. --region="$region" "$CUSTODIAN_YAML"; \
+        done; \
+    elif [ "$CUSTODIAN_YAML" = "tag-to-save.yaml" ] || [ "$CUSTODIAN_YAML" = "aws-monthly.yaml" ]; then \
+        custodian run --output-dir=. --region="$OVERRIDE_REGION" "$CUSTODIAN_YAML"; \
+    else \
+        custodian run --output-dir=. "$CUSTODIAN_YAML"; \
+    fi; \
+    c7n-mailer --config mailer.yml --run
