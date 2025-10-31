@@ -8,6 +8,7 @@ import (
 
 	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
+	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults/stevetypes"
 	"github.com/rancher/shepherd/pkg/config"
@@ -37,8 +38,8 @@ type NodeScalingTestSuite struct {
 	scalingConfig     *scalinginput.Config
 	cattleConfig      map[string]any
 	rke2ClusterConfig *clusters.ClusterConfig
-	rke2ClusterID     string
-	k3sClusterID      string
+	rke2Cluster       *v1.SteveAPIObject
+	k3sCluster        *v1.SteveAPIObject
 }
 
 func (s *NodeScalingTestSuite) TearDownSuite() {
@@ -91,11 +92,11 @@ func (s *NodeScalingTestSuite) SetupSuite() {
 	k3sClusterConfig.MachinePools = nodeRolesStandard
 
 	logrus.Info("Provisioning RKE2 cluster")
-	s.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), s.rke2ClusterConfig, awsEC2Configs, true, false)
+	s.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), s.rke2ClusterConfig, awsEC2Configs, true, false)
 	require.NoError(s.T(), err)
 
 	logrus.Info("Provisioning K3S cluster")
-	s.k3sClusterID, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.K3SClusterType.String(), k3sClusterConfig, awsEC2Configs, true, false)
+	s.k3sCluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.K3SClusterType.String(), k3sClusterConfig, awsEC2Configs, true, false)
 	require.NoError(s.T(), err)
 }
 
@@ -126,13 +127,13 @@ func (s *NodeScalingTestSuite) TestScalingNodePools() {
 		clusterID string
 		isWindows bool
 	}{
-		{"RKE2_Node_Driver_Scale_Control_Plane", nodeRolesControlPlane, s.rke2ClusterID, false},
-		{"RKE2_Node_Driver_Scale_ETCD", nodeRolesEtcd, s.rke2ClusterID, false},
-		{"RKE2_Node_Driver_Scale_Worker", nodeRolesWorker, s.rke2ClusterID, false},
-		{"RKE2_Node_Driver_Scale_Windows", nodeRolesWindows, s.rke2ClusterID, true},
-		{"K3S_Node_Driver_Scale_Control_Plane", nodeRolesControlPlane, s.k3sClusterID, false},
-		{"K3S_Node_Driver_Scale_ETCD", nodeRolesEtcd, s.k3sClusterID, false},
-		{"K3S_Node_Driver_Scale_Worker", nodeRolesWorker, s.k3sClusterID, false},
+		{"RKE2_Node_Driver_Scale_Control_Plane", nodeRolesControlPlane, s.rke2Cluster.ID, false},
+		{"RKE2_Node_Driver_Scale_ETCD", nodeRolesEtcd, s.rke2Cluster.ID, false},
+		{"RKE2_Node_Driver_Scale_Worker", nodeRolesWorker, s.rke2Cluster.ID, false},
+		{"RKE2_Node_Driver_Scale_Windows", nodeRolesWindows, s.rke2Cluster.ID, true},
+		{"K3S_Node_Driver_Scale_Control_Plane", nodeRolesControlPlane, s.k3sCluster.ID, false},
+		{"K3S_Node_Driver_Scale_ETCD", nodeRolesEtcd, s.k3sCluster.ID, false},
+		{"K3S_Node_Driver_Scale_Worker", nodeRolesWorker, s.k3sCluster.ID, false},
 	}
 
 	for _, tt := range tests {

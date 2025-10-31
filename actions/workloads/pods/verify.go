@@ -2,6 +2,7 @@ package pods
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -20,6 +21,14 @@ import (
 	appv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
 	kwait "k8s.io/apimachinery/pkg/util/wait"
+)
+
+const (
+	Webhook      = "rancher-webhook"
+	SUC          = "system-upgrade-controller"
+	Fleet        = "fleet-agent"
+	ClusterAgent = "cattle-cluster-agent"
+	helmPrefix   = "helm"
 )
 
 // VerifyReadyDaemonsetPods tries to poll the Steve API to verify the expected number of daemonset pods are in the Ready
@@ -72,7 +81,25 @@ func VerifyClusterPods(t *testing.T, client *rancher.Client, cluster *steveV1.St
 
 	var podErrors []error
 	steveClient := downstreamClient.SteveType(stevetypes.Pod)
+	deploymentClient := downstreamClient.SteveType(stevetypes.Deployment)
 	err = kwait.PollUntilContextTimeout(context.TODO(), 5*time.Second, defaults.TenMinuteTimeout, true, func(ctx context.Context) (done bool, err error) {
+		clusterDeployments, err := deploymentClient.List(nil)
+		if err != nil {
+			return false, nil
+		}
+
+		requiredDeployments := []string{ClusterAgent, Webhook, Fleet, SUC}
+		requiredDeploymentCount := 0
+		for _, deployment := range clusterDeployments.Data {
+			if slices.Contains(requiredDeployments, deployment.Name) {
+				logrus.Tracef("Deployment: %s exists", deployment.Name)
+				requiredDeploymentCount += 1
+			}
+		}
+		if requiredDeploymentCount != len(requiredDeployments) {
+			return false, nil
+		}
+
 		podErrors = []error{}
 
 		clusterPods, err := steveClient.List(nil)
@@ -87,13 +114,14 @@ func VerifyClusterPods(t *testing.T, client *rancher.Client, cluster *steveV1.St
 			}
 
 			if err != nil {
-				if !strings.Contains(pod.Name, "helm") {
+				if !strings.Contains(pod.Name, helmPrefix) {
 					podErrors = append(podErrors, err)
 				} else {
 					logrus.Warningf("Helm pod: %s is not ready", pod.Name)
 				}
 			}
 		}
+
 		return true, nil
 	})
 

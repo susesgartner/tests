@@ -8,6 +8,7 @@ import (
 
 	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
+	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults/stevetypes"
 	"github.com/rancher/shepherd/pkg/config"
@@ -29,10 +30,10 @@ import (
 
 type SnapshotRestoreWindowsTestSuite struct {
 	suite.Suite
-	session       *session.Session
-	client        *rancher.Client
-	cattleConfig  map[string]any
-	rke2ClusterID string
+	session      *session.Session
+	client       *rancher.Client
+	cattleConfig map[string]any
+	rke2Cluster  *v1.SteveAPIObject
 }
 
 func (s *SnapshotRestoreWindowsTestSuite) TearDownSuite() {
@@ -80,7 +81,7 @@ func (s *SnapshotRestoreWindowsTestSuite) SetupSuite() {
 	clusterConfig.MachinePools = nodeRolesStandard
 
 	logrus.Info("Provisioning RKE2 windows cluster")
-	s.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), clusterConfig, awsEC2Configs, true, true)
+	s.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), clusterConfig, awsEC2Configs, true, true)
 	require.NoError(s.T(), err)
 }
 
@@ -96,7 +97,7 @@ func (s *SnapshotRestoreWindowsTestSuite) TestSnapshotRestoreWindows() {
 		etcdSnapshot *etcdsnapshot.Config
 		clusterID    string
 	}{
-		{"RKE2_Windows_Restore", snapshotRestoreNone, s.rke2ClusterID},
+		{"RKE2_Windows_Restore", snapshotRestoreNone, s.rke2Cluster.ID},
 	}
 
 	for _, tt := range tests {

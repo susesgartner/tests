@@ -8,6 +8,7 @@ import (
 
 	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
+	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults/providers"
 	"github.com/rancher/shepherd/extensions/defaults/stevetypes"
@@ -31,10 +32,10 @@ import (
 
 type CertRotationWindowsTestSuite struct {
 	suite.Suite
-	session       *session.Session
-	client        *rancher.Client
-	cattleConfig  map[string]any
-	rke2ClusterID string
+	session      *session.Session
+	client       *rancher.Client
+	cattleConfig map[string]any
+	rke2Cluster  *v1.SteveAPIObject
 }
 
 func (c *CertRotationWindowsTestSuite) TearDownSuite() {
@@ -86,7 +87,7 @@ func (c *CertRotationWindowsTestSuite) SetupSuite() {
 	clusterConfig.MachinePools = nodeRolesStandard
 
 	logrus.Info("Provisioning RKE2 windows cluster")
-	c.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(c.T(), standardUserClient, extClusters.RKE2ClusterType.String(), clusterConfig, awsEC2Configs, true, false)
+	c.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(c.T(), standardUserClient, extClusters.RKE2ClusterType.String(), clusterConfig, awsEC2Configs, true, false)
 	require.NoError(c.T(), err)
 }
 
@@ -95,7 +96,7 @@ func (c *CertRotationWindowsTestSuite) TestCertRotationWindows() {
 		name      string
 		clusterID string
 	}{
-		{"RKE2_Windows_Certificate_Rotation", c.rke2ClusterID},
+		{"RKE2_Windows_Certificate_Rotation", c.rke2Cluster.ID},
 	}
 
 	for _, tt := range tests {

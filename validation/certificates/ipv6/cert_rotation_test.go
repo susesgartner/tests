@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/rancher/shepherd/clients/rancher"
+	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
 	"github.com/rancher/shepherd/extensions/defaults/stevetypes"
 	"github.com/rancher/shepherd/pkg/config"
@@ -29,10 +30,10 @@ import (
 
 type CertRotationIPv6TestSuite struct {
 	suite.Suite
-	session       *session.Session
-	client        *rancher.Client
-	cattleConfig  map[string]any
-	rke2ClusterID string
+	session      *session.Session
+	client       *rancher.Client
+	cattleConfig map[string]any
+	rke2Cluster  *v1.SteveAPIObject
 }
 
 func (c *CertRotationIPv6TestSuite) TearDownSuite() {
@@ -81,7 +82,7 @@ func (c *CertRotationIPv6TestSuite) SetupSuite() {
 	rke2ClusterConfig.MachinePools = nodeRolesStandard
 
 	logrus.Info("Provisioning RKE2 cluster")
-	c.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(c.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, nil, true, false)
+	c.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(c.T(), standardUserClient, extClusters.RKE2ClusterType.String(), rke2ClusterConfig, nil, true, false)
 	require.NoError(c.T(), err)
 }
 
@@ -90,7 +91,7 @@ func (c *CertRotationIPv6TestSuite) TestCertRotationIPv6() {
 		name      string
 		clusterID string
 	}{
-		{"RKE2_IPv6_Certificate_Rotation", c.rke2ClusterID},
+		{"RKE2_IPv6_Certificate_Rotation", c.rke2Cluster.ID},
 	}
 
 	for _, tt := range tests {

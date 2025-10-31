@@ -38,7 +38,7 @@ type UpgradeWindowsKubernetesTestSuite struct {
 	client        *rancher.Client
 	cattleConfig  map[string]any
 	clusterConfig *clusters.ClusterConfig
-	rke2ClusterID string
+	rke2Cluster   *v1.SteveAPIObject
 	clusters      []upgradeinput.Cluster
 }
 
@@ -87,7 +87,7 @@ func (u *UpgradeWindowsKubernetesTestSuite) SetupSuite() {
 	u.clusterConfig.MachinePools = nodeRolesStandard
 
 	logrus.Info("Provisioning RKE2 cluster")
-	u.rke2ClusterID, err = resources.ProvisionRKE2K3SCluster(u.T(), standardUserClient, extClusters.RKE2ClusterType.String(), u.clusterConfig, awsEC2Configs, true, true)
+	u.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(u.T(), standardUserClient, extClusters.RKE2ClusterType.String(), u.clusterConfig, awsEC2Configs, true, true)
 	require.NoError(u.T(), err)
 
 	clusters, err := upgradeinput.LoadUpgradeKubernetesConfig(client)
@@ -103,7 +103,7 @@ func (u *UpgradeWindowsKubernetesTestSuite) TestUpgradeWindowsKubernetes() {
 		clusterConfig *clusters.ClusterConfig
 		clusterType   string
 	}{
-		{"Upgrading_RKE2_Windows_cluster", u.rke2ClusterID, u.clusterConfig, extClusters.RKE2ClusterType.String()},
+		{"Upgrading_RKE2_Windows_cluster", u.rke2Cluster.ID, u.clusterConfig, extClusters.RKE2ClusterType.String()},
 	}
 
 	for _, tt := range tests {
