@@ -65,11 +65,11 @@ RUN echo "from_address: caleb.warren@suse.com" >> mailer.yml
 
 CMD set -e; \
     for i in *.yaml; do \
-        sed -i "s/USERKEYS/${USER_KEYS}/g" "$i"; \
-        sed -i "s/DONOTDELETEKEYS/${DONOTDELETE_KEYS}/g" "$i"; \
+        sed -i 's/USERKEYS/'"${USER_KEYS}"'/g' "$i"; \
+        sed -i 's/DONOTDELETEKEYS/'"${DONOTDELETE_KEYS}"'/g' "$i"; \
         sed -i "s|SQSURL|${SQS_URL}|g" "$i"; \
         sed -i "s|QAIAMWEBHOOK|${QA_IAM_WEBHOOK}|g" "$i"; \
-        sed -i "s|ROUTE53LONGLIVING|${ROUTE53_LONGLIVING}|g" "$i"; \
+        sed -i 's/ROUTE53LONGLIVING/'"${ROUTE53_LONGLIVING}"'/g' "$i"; \
     done; \
     echo "Using USER_KEYS=${USER_KEYS}"; \
     if [ "$CUSTODIAN_YAML" = "aws.yaml" ] || [ "$CUSTODIAN_YAML" = "untag-to-delete.yaml" ]; then \
