@@ -12,7 +12,7 @@ import (
 	infraConfig "github.com/rancher/tests/validation/recurring/infrastructure/config"
 	tfpConfig "github.com/rancher/tfp-automation/config"
 	"github.com/rancher/tfp-automation/defaults/keypath"
-	"github.com/rancher/tfp-automation/tests/infrastructure"
+	"github.com/rancher/tfp-automation/tests/infrastructure/ranchers"
 	"github.com/sirupsen/logrus"
 )
 
@@ -44,8 +44,8 @@ func main() {
 func upgradeRancher(t *testing.T) (*rancher.Client, error) {
 	testSession := session.NewSession()
 
-	client, serverNodeOne, _, _, cattleConfig := infrastructure.SetupRancher(t, testSession, keypath.SanityKeyPath)
-	client, _, _, _ = infrastructure.UpgradeRancher(t, client, serverNodeOne, testSession, cattleConfig)
+	client, serverNodeOne, _, _, cattleConfig := ranchers.SetupRancher(t, testSession, keypath.SanityKeyPath)
+	client, _, _, _ = ranchers.UpgradeRancher(t, client, serverNodeOne, testSession, cattleConfig)
 
 	return client, nil
 
