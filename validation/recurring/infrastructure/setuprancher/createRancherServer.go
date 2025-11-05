@@ -18,7 +18,7 @@ import (
 	"github.com/rancher/tfp-automation/framework/set/resources/dualstack"
 	"github.com/rancher/tfp-automation/framework/set/resources/ipv6"
 	"github.com/rancher/tfp-automation/framework/set/resources/rancher2"
-	"github.com/rancher/tfp-automation/tests/infrastructure"
+	"github.com/rancher/tfp-automation/tests/infrastructure/ranchers"
 	"github.com/sirupsen/logrus"
 )
 
@@ -59,7 +59,7 @@ func main() {
 
 func setupRancher(t *testing.T) (*rancher.Client, string, *terraform.Options, *terraform.Options, map[string]any, error) {
 	testSession := session.NewSession()
-	client, serverNodeOne, standaloneTerraformOptions, terraformOptions, cattleConfig := infrastructure.SetupRancher(t, testSession, keypath.SanityKeyPath)
+	client, serverNodeOne, standaloneTerraformOptions, terraformOptions, cattleConfig := ranchers.SetupRancher(t, testSession, keypath.SanityKeyPath)
 
 	return client, serverNodeOne, standaloneTerraformOptions, terraformOptions, cattleConfig, nil
 }
@@ -76,7 +76,7 @@ func setupIPv6Rancher(t *testing.T, rancherConfig *rancher.Config, terraformConf
 
 	testSession := session.NewSession()
 
-	client, err := infrastructure.PostRancherSetup(t, terraformOptions, rancherConfig, testSession, terraformConfig.Standalone.RancherHostname, keyPath, false, false)
+	client, err := ranchers.PostRancherSetup(t, terraformOptions, rancherConfig, testSession, terraformConfig.Standalone.RancherHostname, keyPath, false, false)
 	if err != nil && *rancherConfig.Cleanup {
 		cleanup.Cleanup(nil, terraformOptions, keyPath)
 	}
@@ -96,7 +96,7 @@ func setupDualstackRancher(t *testing.T, rancherConfig *rancher.Config, terrafor
 
 	testSession := session.NewSession()
 
-	client, err := infrastructure.PostRancherSetup(t, terraformOptions, rancherConfig, testSession, terraformConfig.Standalone.RancherHostname, keyPath, false, false)
+	client, err := ranchers.PostRancherSetup(t, terraformOptions, rancherConfig, testSession, terraformConfig.Standalone.RancherHostname, keyPath, false, false)
 	if err != nil && *rancherConfig.Cleanup {
 		cleanup.Cleanup(nil, terraformOptions, keyPath)
 	}

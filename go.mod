@@ -73,9 +73,9 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.28
 	github.com/rancher/rancher v0.0.0-20250806201723-9a7af3779b9d
 	github.com/rancher/shepherd v0.0.0-20251003203259-669abb78af51
-	github.com/rancher/tests/actions v0.0.0-20251027225328-d9bc557674d7
+	github.com/rancher/tests/actions v0.0.0-20251029202427-cb31d162ce83
 	github.com/rancher/tests/interoperability v0.0.0-00010101000000-000000000000
-	github.com/rancher/tfp-automation v0.0.0-20251030234034-8a53e4037fc1
+	github.com/rancher/tfp-automation v0.0.0-20251105191726-60ebaf75cb5e
 	go.qase.io/qase-api-client v0.0.0-00010101000000-000000000000
 )
 
