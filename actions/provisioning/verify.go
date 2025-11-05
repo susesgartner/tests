@@ -10,7 +10,6 @@ import (
 	provv1 "github.com/rancher/rancher/pkg/apis/provisioning.cattle.io/v1"
 
 	"github.com/rancher/tests/actions/clusters"
-	"github.com/rancher/tests/actions/machinepools"
 	"github.com/rancher/tests/actions/provisioninginput"
 	wranglername "github.com/rancher/wrangler/pkg/name"
 
@@ -416,7 +415,7 @@ func VerifyUpgrade(t *testing.T, updatedCluster *bundledclusters.BundledCluster,
 }
 
 // VerifyDataDirectories validates that data is being distributed properly across data directories.
-func VerifyDataDirectories(t *testing.T, client *rancher.Client, clustersConfig *clusters.ClusterConfig, machineConfig machinepools.MachineConfigs, cluster *steveV1.SteveAPIObject) {
+func VerifyDataDirectories(t *testing.T, client *rancher.Client, cluster *steveV1.SteveAPIObject) {
 	clusterSpec := &provv1.ClusterSpec{}
 	err := steveV1.ConvertToK8sType(cluster.Spec, clusterSpec)
 	assert.NoError(t, err)
