@@ -118,7 +118,7 @@ func TestDataDirectories(t *testing.T) {
 			pods.VerifyClusterPods(t, tt.client, cluster)
 
 			logrus.Infof("Verifying cluster data directories (%s)", cluster.Name)
-			provisioning.VerifyDataDirectories(t, k.client, clusterConfig, machineConfigSpec, cluster)
+			provisioning.VerifyDataDirectories(t, k.client, cluster)
 		})
 
 		params := provisioning.GetProvisioningSchemaParams(tt.client, k.cattleConfig)
