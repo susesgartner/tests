@@ -2,6 +2,7 @@ package qase
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -154,31 +155,26 @@ func (q *Service) UploadTests(project string, testCases []upstream.TestCaseCreat
 		if err == nil && len(matchingCases) == 1 {
 			logrus.Info("Updating test case:\n\tProject: ", project, "\n\tTitle: ", tc.Title, "\n\tSuiteId: ", *tc.SuiteId)
 			var qaseTest upstream.TestCaseUpdate
-			qaseTest.Title = &tc.Title
-			qaseTest.SuiteId = tc.SuiteId
-			qaseTest.Description = tc.Description
-			qaseTest.Priority = tc.Priority
-			qaseTest.IsFlaky = tc.IsFlaky
-			qaseTest.Automation = tc.Automation
-			qaseTest.Params = tc.Params
-			qaseTest.CustomField = tc.CustomField
-			for _, step := range tc.Steps {
-				var qaseSteps upstream.TestStepCreate
-				qaseSteps.Action = step.Action
-				qaseSteps.ExpectedResult = step.ExpectedResult
-				qaseSteps.Data = step.Data
-				qaseSteps.Position = step.Position
-				qaseTest.Steps = append(qaseTest.Steps, qaseSteps)
+			marshaledConfig, err := json.Marshal(tc)
+			if err != nil {
+				return err
+			}
+
+			err = json.Unmarshal(marshaledConfig, &qaseTest)
+			if err != nil {
+				return err
 			}
 
 			err = q.updateTestCase(project, qaseTest, int32(*matchingCases[0].Id))
 			if err != nil {
-				return err
+				logrus.Error(err)
+				continue
 			}
 		} else if len(matchingCases) > 1 {
-			return fmt.Errorf("Multiple instances of the same test case found: %s", tc.Title)
+			logrus.Warningf("Skipping %s: Multiple instances of the same test case found in project %s", tc.Title, project)
+			continue
 		} else {
-			logrus.Info("Uploading test case:\n\tProject: ", project, "\n\tTitle: ", tc.Title, "\n\tDescription: ", *tc.Description, "\n\tSuiteId: ")
+			logrus.Info("Creating test case:\n\tProject: ", project, "\n\tTitle: ", tc.Title, "\n\tDescription: ", *tc.Description, "\n\tSuiteId: ")
 			err = q.createTestCase(project, tc)
 			if err != nil {
 				return err
