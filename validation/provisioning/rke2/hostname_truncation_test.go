@@ -85,8 +85,6 @@ func TestHostnameTruncation(t *testing.T) {
 		})
 
 		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
 			var hostnamePools []machinepools.HostnameTruncation
 			for _, machinePoolLength := range tt.machinePoolLengthLimits {
 				currentTruncationPool := machinepools.HostnameTruncation{
