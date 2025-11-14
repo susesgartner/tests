@@ -47,6 +47,9 @@ func (u *UpgradeKubernetesExistingClusterTestSuite) SetupSuite() {
 
 	u.cattleConfig = config.LoadConfigFromFile(os.Getenv(config.ConfigEnvironmentKey))
 
+	u.cattleConfig, err = defaults.LoadPackageDefaults(u.cattleConfig, "")
+	require.NoError(u.T(), err)
+
 	loggingConfig := new(logging.Logging)
 	operations.LoadObjectFromMap(logging.LoggingKey, u.cattleConfig, loggingConfig)
 

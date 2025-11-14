@@ -17,7 +17,6 @@ import (
 	"github.com/rancher/tests/actions/config/defaults"
 	"github.com/rancher/tests/actions/config/permutationdata"
 	"github.com/rancher/tests/actions/logging"
-	"github.com/rancher/tests/actions/machinepools"
 	"github.com/rancher/tests/actions/provisioning"
 	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/rancher/tests/actions/workloads/pods"
@@ -99,7 +98,7 @@ func TestDynamicNodeDriver(t *testing.T) {
 
 				provider := provisioning.CreateProvider(clusterConfig.Provider)
 				credentialSpec := cloudcredentials.LoadCloudCredential(string(provider.Name))
-				machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
+				machineConfigSpec := provider.LoadMachineConfigFunc(cattleConfig)
 
 				logrus.Info("Provisioning cluster")
 				cluster, err := provisioning.CreateProvisioningCluster(tt.client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)

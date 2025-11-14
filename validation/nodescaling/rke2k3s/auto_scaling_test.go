@@ -49,6 +49,9 @@ func autoScalingSetup(t *testing.T) autoScalingTest {
 
 	s.cattleConfig = config.LoadConfigFromFile(os.Getenv(config.ConfigEnvironmentKey))
 
+	s.cattleConfig, err = defaults.LoadPackageDefaults(s.cattleConfig, "")
+	require.NoError(t, err)
+
 	return s
 }
 
@@ -93,8 +96,11 @@ func TestAutoScalingUp(t *testing.T) {
 			clusterConfig.MachinePools[2].MachinePoolConfig.AutoscalingMinSize = &tt.minNodeCount
 			clusterConfig.MachinePools[2].MachinePoolConfig.AutoscalingMaxSize = &tt.maxNodeCount
 
+			provider := provisioning.CreateProvider(clusterConfig.Provider)
+			machineConfigSpec := provider.LoadMachineConfigFunc(s.cattleConfig)
+
 			logrus.Infof("Provisioning %s cluster", tt.clusterType)
-			cluster, err := resources.ProvisionRKE2K3SCluster(t, s.client, tt.clusterType, clusterConfig, nil, true, false)
+			cluster, err := resources.ProvisionRKE2K3SCluster(t, s.client, tt.clusterType, provider, *clusterConfig, machineConfigSpec, nil, true, false)
 			require.NoError(t, err)
 
 			logrus.Infof("Verifying cluster autoscaler (%s)", cluster.Name)
@@ -167,8 +173,11 @@ func TestAutoScalingDown(t *testing.T) {
 			clusterConfig.MachinePools[2].MachinePoolConfig.AutoscalingMinSize = &tt.minNodeCount
 			clusterConfig.MachinePools[2].MachinePoolConfig.AutoscalingMaxSize = &tt.maxNodeCount
 
+			provider := provisioning.CreateProvider(clusterConfig.Provider)
+			machineConfigSpec := provider.LoadMachineConfigFunc(s.cattleConfig)
+
 			logrus.Infof("Provisioning %s cluster", tt.clusterType)
-			cluster, err := resources.ProvisionRKE2K3SCluster(t, tt.client, tt.clusterType, clusterConfig, nil, true, false)
+			cluster, err := resources.ProvisionRKE2K3SCluster(t, tt.client, tt.clusterType, provider, *clusterConfig, machineConfigSpec, nil, true, false)
 			require.NoError(t, err)
 
 			logrus.Infof("Verifying the cluster is ready (%s)", cluster.Name)
@@ -252,8 +261,11 @@ func TestAutoScalingPause(t *testing.T) {
 			clusterConfig.MachinePools[2].MachinePoolConfig.AutoscalingMinSize = &tt.minNodeCount
 			clusterConfig.MachinePools[2].MachinePoolConfig.AutoscalingMaxSize = &tt.maxNodeCount
 
+			provider := provisioning.CreateProvider(clusterConfig.Provider)
+			machineConfigSpec := provider.LoadMachineConfigFunc(s.cattleConfig)
+
 			logrus.Infof("Provisioning %s cluster", tt.clusterType)
-			cluster, err := resources.ProvisionRKE2K3SCluster(t, s.client, tt.clusterType, clusterConfig, nil, true, false)
+			cluster, err := resources.ProvisionRKE2K3SCluster(t, s.client, tt.clusterType, provider, *clusterConfig, machineConfigSpec, nil, true, false)
 			require.NoError(t, err)
 
 			logrus.Infof("Pausing cluster autoscaler (%s)", cluster.Name)

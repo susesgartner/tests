@@ -12,6 +12,7 @@ import (
 	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/config/operations"
 	"github.com/rancher/shepherd/pkg/session"
+	"github.com/rancher/tests/actions/config/defaults"
 	"github.com/rancher/tests/actions/logging"
 	"github.com/rancher/tests/actions/provisioning"
 	"github.com/rancher/tests/actions/workloads/pods"
@@ -43,6 +44,9 @@ func (c *CertRotationExistingClusterTestSuite) SetupSuite() {
 	c.client = client
 
 	c.cattleConfig = config.LoadConfigFromFile(os.Getenv(config.ConfigEnvironmentKey))
+
+	c.cattleConfig, err = defaults.LoadPackageDefaults(c.cattleConfig, "")
+	require.NoError(c.T(), err)
 
 	loggingConfig := new(logging.Logging)
 	operations.LoadObjectFromMap(logging.LoggingKey, c.cattleConfig, loggingConfig)
