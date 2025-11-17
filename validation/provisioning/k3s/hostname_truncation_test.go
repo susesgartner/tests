@@ -103,7 +103,7 @@ func TestHostnameTruncation(t *testing.T) {
 
 			provider := provisioning.CreateProvider(clusterConfig.Provider)
 			credentialSpec := cloudcredentials.LoadCloudCredential(string(provider.Name))
-			machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
+			machineConfigSpec := provider.LoadMachineConfigFunc(k.cattleConfig)
 
 			logrus.Info("Provisioning cluster")
 			cluster, err := provisioning.CreateProvisioningCluster(tt.client, provider, credentialSpec, clusterConfig, machineConfigSpec, hostnamePools)

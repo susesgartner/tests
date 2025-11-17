@@ -46,6 +46,9 @@ func (s *AutoReplaceExistingClusterSuite) SetupSuite() {
 
 	s.cattleConfig = config.LoadConfigFromFile(os.Getenv(config.ConfigEnvironmentKey))
 
+	s.cattleConfig, err = defaults.LoadPackageDefaults(s.cattleConfig, "")
+	require.NoError(s.T(), err)
+
 	loggingConfig := new(logging.Logging)
 	operations.LoadObjectFromMap(logging.LoggingKey, s.cattleConfig, loggingConfig)
 

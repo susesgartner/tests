@@ -12,6 +12,7 @@ import (
 	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/config/operations"
 	"github.com/rancher/shepherd/pkg/session"
+	"github.com/rancher/tests/actions/config/defaults"
 	"github.com/rancher/tests/actions/etcdsnapshot"
 	"github.com/rancher/tests/actions/logging"
 	"github.com/stretchr/testify/require"
@@ -40,6 +41,9 @@ func (s *SnapshotRestoreExistingClusterTestSuite) SetupSuite() {
 	s.client = client
 
 	s.cattleConfig = config.LoadConfigFromFile(os.Getenv(config.ConfigEnvironmentKey))
+
+	s.cattleConfig, err = defaults.LoadPackageDefaults(s.cattleConfig, "")
+	require.NoError(s.T(), err)
 
 	loggingConfig := new(logging.Logging)
 	operations.LoadObjectFromMap(logging.LoggingKey, s.cattleConfig, loggingConfig)

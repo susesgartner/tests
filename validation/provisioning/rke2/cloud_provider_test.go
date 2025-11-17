@@ -15,7 +15,6 @@ import (
 	"github.com/rancher/tests/actions/clusters"
 	"github.com/rancher/tests/actions/config/defaults"
 	"github.com/rancher/tests/actions/logging"
-	"github.com/rancher/tests/actions/machinepools"
 	"github.com/rancher/tests/actions/provisioning"
 	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/rancher/tests/actions/qase"
@@ -100,7 +99,7 @@ func TestAWSCloudProvider(t *testing.T) {
 
 			provider := provisioning.CreateProvider(clusterConfig.Provider)
 			credentialSpec := cloudcredentials.LoadCloudCredential(string(provider.Name))
-			machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
+			machineConfigSpec := provider.LoadMachineConfigFunc(r.cattleConfig)
 
 			logrus.Infof("Provisioning cluster")
 			cluster, err := provisioning.CreateProvisioningCluster(tt.client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)
@@ -161,7 +160,7 @@ func TestVSphereCloudProvider(t *testing.T) {
 
 			provider := provisioning.CreateProvider(clusterConfig.Provider)
 			credentialSpec := cloudcredentials.LoadCloudCredential(string(provider.Name))
-			machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
+			machineConfigSpec := provider.LoadMachineConfigFunc(r.cattleConfig)
 
 			logrus.Info("Provisioning cluster")
 			cluster, err := provisioning.CreateProvisioningCluster(tt.client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)
@@ -223,7 +222,7 @@ func TestHarvesterCloudProvider(t *testing.T) {
 
 			provider := provisioning.CreateProvider(clusterConfig.Provider)
 			credentialSpec := cloudcredentials.LoadCloudCredential(string(provider.Name))
-			machineConfigSpec := machinepools.LoadMachineConfigs(string(provider.Name))
+			machineConfigSpec := provider.LoadMachineConfigFunc(r.cattleConfig)
 
 			logrus.Infof("Provisioning cluster")
 			cluster, err := provisioning.CreateProvisioningCluster(tt.client, provider, credentialSpec, clusterConfig, machineConfigSpec, nil)
