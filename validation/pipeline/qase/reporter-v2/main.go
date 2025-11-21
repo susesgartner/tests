@@ -23,6 +23,7 @@ var (
 	runIDEnvVar             = os.Getenv(qase.TestRunEnvVar)
 	projectIDEnvVar         = os.Getenv(qase.ProjectIDEnvVar)
 	testRunName             = os.Getenv(qase.TestRunNameEnvVar)
+	buildUrl                = os.Getenv(qase.BuildUrl)
 	_, callerFilePath, _, _ = runtime.Caller(0)
 	basepath                = filepath.Join(filepath.Dir(callerFilePath), "..", "..", "..", "..")
 	validStatus             = map[string]string{"pass": "passed", "fail": "failed", "skip": "skipped"}
@@ -40,12 +41,14 @@ func main() {
 	}
 
 	if runIDEnvVar != "" {
-		client := qase.SetupQaseClient()
+		qaseService := qase.SetupQaseClient()
 
 		runID, err := strconv.ParseInt(runIDEnvVar, 10, 64)
 
+		runDescription := createRunDescription(buildUrl)
+
 		if testRunName != "" {
-			resp, err := client.CreateTestRun(testRunName, projectIDEnvVar)
+			resp, err := qaseService.CreateTestRun(testRunName, projectIDEnvVar, runDescription)
 			if err != nil {
 				logrus.Error("error creating test run: ", err)
 			} else {
@@ -57,9 +60,14 @@ func main() {
 			logrus.Fatalf("error reporting converting string to int64: %v", err)
 		}
 
-		err = reportTestQases(client, int32(runID))
+		err = reportTestQases(qaseService, int32(runID))
 		if err != nil {
 			logrus.Error("error reporting: ", err)
+		}
+
+		err = qaseService.CompleteTestRun(projectIDEnvVar, int32(runID))
+		if err != nil {
+			logrus.Error("error update reporting: ", err)
 		}
 	} else {
 		logrus.Warningf("QASE run ID not provided")
@@ -279,4 +287,15 @@ func getAutomationTestName(customFields []upstream.CustomFieldValue) string {
 		}
 	}
 	return ""
+}
+
+// createRunDescription build the Qase test run description
+func createRunDescription(buildUrl string) string {
+	var description strings.Builder
+
+	if buildUrl != "" {
+		description.WriteString(fmt.Sprintf("Jenkins Job: %s", buildUrl))
+	}
+
+	return description.String()
 }
