@@ -1,4 +1,4 @@
-//go:build validation
+//go:build validation || prime
 
 //nolint:forbidigo
 package rke2k3s
@@ -10,6 +10,7 @@ import (
 
 	"github.com/rancher/shepherd/clients/rancher"
 	shepherdClusters "github.com/rancher/shepherd/extensions/clusters"
+	"github.com/rancher/shepherd/extensions/defaults/namespaces"
 	"github.com/rancher/shepherd/pkg/config"
 	"github.com/rancher/shepherd/pkg/config/operations"
 	"github.com/rancher/shepherd/pkg/session"
@@ -133,6 +134,7 @@ func TestAutoScalingUp(t *testing.T) {
 }
 
 func TestAutoScalingDown(t *testing.T) {
+	t.Skip("Skipped due to https://github.com/rancher/rancher/issues/52665")
 	s := autoScalingSetup(t)
 
 	nodeRolesStandard := []provisioninginput.MachinePools{
@@ -269,7 +271,7 @@ func TestAutoScalingPause(t *testing.T) {
 			require.NoError(t, err)
 
 			logrus.Infof("Pausing cluster autoscaler (%s)", cluster.Name)
-			err = scaling.PauseAutoscaler(s.client, cluster)
+			err = scaling.UpdateAutoscalerState(s.client, cluster, true)
 			require.NoError(t, err)
 
 			logrus.Infof("Verifying cluster autoscaler (%s)", cluster.Name)
@@ -286,8 +288,25 @@ func TestAutoScalingPause(t *testing.T) {
 			require.NoError(t, err)
 
 			logrus.Infof("Verifying the cluster does not scale (%s)", cluster.Name)
-			err = scaling.WatchAndWaitForAutoscaling(s.client, cluster, tt.maxNodeCount, time.Minute*10)
+			err = scaling.WatchAndWaitForAutoscaling(s.client, cluster, tt.maxNodeCount, time.Minute*5)
 			require.Error(t, err)
+
+			logrus.Infof("Verifying the cluster is ready (%s)", cluster.Name)
+			provisioning.VerifyClusterReady(t, s.client, cluster)
+
+			logrus.Infof("Unpausing cluster autoscaler (%s)", cluster.Name)
+			err = scaling.UpdateAutoscalerState(s.client, cluster, false)
+			require.NoError(t, err)
+
+			err = deployment.WaitForDeploymentUpdate(s.client, cluster.ID, namespaces.KubeSystem, scaling.AutoscalerDeploymentName)
+			require.NoError(t, err)
+
+			logrus.Infof("Verifying cluster autoscaler (%s)", cluster.Name)
+			scaling.VerifyAutoscaler(t, s.client, cluster)
+
+			logrus.Infof("Verifying the cluster scales (%s)", cluster.Name)
+			err = scaling.WatchAndWaitForAutoscaling(s.client, cluster, tt.maxNodeCount, time.Minute*5)
+			require.NoError(t, err)
 
 			logrus.Infof("Verifying the cluster is ready (%s)", cluster.Name)
 			provisioning.VerifyClusterReady(t, s.client, cluster)

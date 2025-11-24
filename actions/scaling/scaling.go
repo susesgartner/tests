@@ -67,18 +67,22 @@ func getAutoscalerMachinePools(cluster *v1.SteveAPIObject) ([]apisV1.RKEMachineP
 	return autoscalerPools, err
 }
 
-func PauseAutoscaler(client *rancher.Client, cluster *v1.SteveAPIObject) error {
+func UpdateAutoscalerState(client *rancher.Client, cluster *v1.SteveAPIObject, pause bool) error {
 	apiCluster, cluster, err := clusters.GetProvisioningClusterByName(client, cluster.Name, namespaces.FleetDefault)
 	if err != nil {
 		return err
 	}
 
-	apiCluster.Annotations[autoscalerPausedAnnotation] = "true"
+	if pause {
+		apiCluster.Annotations[autoscalerPausedAnnotation] = "true"
+	} else {
+		delete(apiCluster.Annotations, autoscalerPausedAnnotation)
+	}
 
 	_, err = client.Steve.SteveType(stevetypes.Provisioning).Update(cluster, apiCluster)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return err
 }

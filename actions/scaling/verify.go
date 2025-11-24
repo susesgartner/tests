@@ -1,20 +1,25 @@
 package scaling
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	provv1 "github.com/rancher/rancher/pkg/apis/provisioning.cattle.io/v1"
 	"github.com/rancher/shepherd/clients/rancher"
 	steveV1 "github.com/rancher/shepherd/clients/rancher/v1"
 	v1 "github.com/rancher/shepherd/clients/rancher/v1"
+	"github.com/rancher/shepherd/extensions/defaults"
 	"github.com/rancher/shepherd/extensions/defaults/namespaces"
 	"github.com/rancher/shepherd/extensions/defaults/stevetypes"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	appv1 "k8s.io/api/apps/v1"
+	kwait "k8s.io/apimachinery/pkg/util/wait"
 )
 
 const (
-	autoscalerDeployment       = "cluster-autoscaler-clusterapi-kubernetes-cluster-autoscaler"
+	AutoscalerDeploymentName   = "cluster-autoscaler-clusterapi-kubernetes-cluster-autoscaler"
 	autoscalerPausedAnnotation = "provisioning.cattle.io/cluster-autoscaler-paused"
 )
 
@@ -29,13 +34,23 @@ func VerifyAutoscaler(t *testing.T, client *rancher.Client, cluster *v1.SteveAPI
 
 	deploymentClient := downstreamClient.SteveType(stevetypes.Deployment)
 
-	autoscalerDeployment, err := deploymentClient.ByID(namespaces.KubeSystem + "/" + autoscalerDeployment)
-	require.NoError(t, err)
+	logrus.Debug("Waiting for autoscaler deployment replicas to be available")
+	var deployment *appv1.Deployment
+	err = kwait.PollUntilContextTimeout(context.TODO(), 5*time.Second, defaults.TwoMinuteTimeout, true, func(context.Context) (done bool, err error) {
+		autoscalerDeployment, err := deploymentClient.ByID(namespaces.KubeSystem + "/" + AutoscalerDeploymentName)
+		if err != nil {
+			return false, nil
+		}
 
-	deployment := &appv1.Deployment{}
-	err = steveV1.ConvertToK8sType(autoscalerDeployment.JSONResp, deployment)
+		deployment = &appv1.Deployment{}
+		err = steveV1.ConvertToK8sType(autoscalerDeployment.JSONResp, deployment)
+		if *deployment.Spec.Replicas != deployment.Status.AvailableReplicas {
+			return false, nil
+		}
+
+		return true, nil
+	})
 	require.NoError(t, err)
-	require.Equal(t, *deployment.Spec.Replicas, deployment.Status.AvailableReplicas)
 
 	if cluster.Annotations[autoscalerPausedAnnotation] == "true" {
 		require.Zero(t, *deployment.Spec.Replicas)
