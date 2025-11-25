@@ -1,10 +1,10 @@
 package scaling
 
 const (
-	ScalingConfigurationKey = "scalingConfig"
+	AutoScalingConfigurationKey = "autoScalingConfig"
 )
 
-type Config struct {
-	AutoscalerChartRepository string `json:"autoscalerChartRepository" yaml:"autoscalerChartRepository"`
-	AutoscalerImage           string `json:"autoscalerImage" yaml:"autoscalerImage"`
+type AutoscalingConfig struct {
+	ChartRepository string `json:"chartRepository,omitempty" yaml:"chartRepository,omitempty"`
+	Image           string `json:"image,omitempty" yaml:"image,omitempty"`
 }

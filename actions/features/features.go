@@ -100,6 +100,26 @@ func UpdateFeatureFlag(client *rancher.Client, name string, value bool) error {
 	return nil
 }
 
+func IsEnabled(client *rancher.Client, name string) (bool, error) {
+	featureOpts := &types.ListOpts{Filters: map[string]interface{}{
+		"name": name,
+	}}
+
+	features, err := client.Management.Feature.List(featureOpts)
+	if err != nil {
+		return false, err
+	}
+
+	enabled := false
+	for _, feature := range features.Data {
+		if *feature.Value == true {
+			enabled = true
+		}
+	}
+
+	return enabled, nil
+}
+
 func ConfigureAutoscaler(client *rancher.Client, repository, image string) error {
 	downstreamClient, err := client.Steve.ProxyDownstream(local)
 	if err != nil {
