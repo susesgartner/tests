@@ -205,7 +205,7 @@ func CreateProvisioningCluster(client *rancher.Client, provider Provider, creden
 		return createdCluster, err
 	}
 
-	if clientErr != nil {
+	if clientErr != nil && createdCluster == nil {
 		return createdCluster, clientErr
 	}
 
@@ -630,7 +630,7 @@ func CreateProvisioningAirgapCustomCluster(client *rancher.Client, clustersConfi
 	} else {
 		clusterName = namegen.AppendRandomString(rke2k3sAirgapCustomCluster)
 	}
-	
+
 	cluster := clusters.NewK3SRKE2ClusterConfig(clusterName, namespaces.FleetDefault, clustersConfig, nil, "")
 
 	clusterResp, err := shepherdclusters.CreateK3SRKE2Cluster(client, cluster)
