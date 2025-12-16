@@ -5,6 +5,7 @@ package globalrolesv2
 import (
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -21,6 +22,7 @@ import (
 	"github.com/rancher/shepherd/extensions/users"
 	rbacapi "github.com/rancher/tests/actions/kubeapi/rbac"
 	"github.com/rancher/tests/actions/provisioning"
+	"github.com/rancher/tests/actions/workloads/deployment"
 	"github.com/rancher/tests/actions/workloads/pods"
 
 	"github.com/rancher/tests/actions/rbac"
@@ -174,6 +176,10 @@ func (gr *GlobalRolesV2TestSuite) TestClusterCreationAfterAddingGlobalRoleWithIn
 	require.NoError(gr.T(), err)
 
 	provisioning.VerifyClusterReady(gr.T(), userClient, firstClusterSteveObject)
+
+	err = deployment.VerifyClusterDeployments(gr.client, firstClusterSteveObject)
+	require.NoError(gr.T(), err)
+
 	err = pods.VerifyClusterPods(userClient, firstClusterSteveObject)
 	require.NoError(gr.T(), err)
 
@@ -183,6 +189,11 @@ func (gr *GlobalRolesV2TestSuite) TestClusterCreationAfterAddingGlobalRoleWithIn
 	require.NoError(gr.T(), err)
 
 	provisioning.VerifyClusterReady(gr.T(), userClient, secondClusterSteveObject)
+
+	logrus.Infof("Verifying cluster deployments (%s)", secondClusterSteveObject.Name)
+	err = deployment.VerifyClusterDeployments(gr.client, secondClusterSteveObject)
+	require.NoError(gr.T(), err)
+
 	err = pods.VerifyClusterPods(userClient, secondClusterSteveObject)
 	require.NoError(gr.T(), err)
 
@@ -439,6 +450,11 @@ func (gr *GlobalRolesV2TestSuite) TestUserWithInheritedClusterRolesImpactFromClu
 	require.NoError(gr.T(), err)
 
 	provisioning.VerifyClusterReady(gr.T(), gr.client, rke2SteveObject)
+
+	logrus.Infof("Verifying cluster deployments (%s)", rke2SteveObject.Name)
+	err = deployment.VerifyClusterDeployments(gr.client, rke2SteveObject)
+	require.NoError(gr.T(), err)
+
 	err = pods.VerifyClusterPods(gr.client, rke2SteveObject)
 	require.NoError(gr.T(), err)
 
