@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/rancher/shepherd/clients/rancher"
@@ -24,6 +25,10 @@ import (
 )
 
 const (
+	Webhook            = "rancher-webhook"
+	SUC                = "system-upgrade-controller"
+	Fleet              = "fleet-agent"
+	ClusterAgent       = "cattle-cluster-agent"
 	revisionAnnotation = "deployment.kubernetes.io/revision"
 )
 
@@ -552,4 +557,81 @@ func VerifyDeploymentPauseOrchestration(client *rancher.Client, clusterID string
 	}
 
 	return err
+}
+
+func VerifyClusterDeployments(client *rancher.Client, clusterID string) error {
+	downstreamClient, err := client.Steve.ProxyDownstream(clusterID)
+	if err != nil {
+		return err
+	}
+	if downstreamClient == nil {
+		return errors.New("downstream client is nil")
+	}
+
+	deploymentClient := downstreamClient.SteveType(stevetypes.Deployment)
+	requiredDeployments := []string{ClusterAgent, Webhook, Fleet, SUC}
+
+	logrus.Debugf("Verifying all required deployments exist: %v", requiredDeployments)
+	err = kwait.PollUntilContextTimeout(context.TODO(), 5*time.Second, defaults.TenMinuteTimeout, true, func(ctx context.Context) (done bool, err error) {
+		clusterDeployments, err := deploymentClient.List(nil)
+		if err != nil {
+			return false, nil
+		}
+
+		for _, deployment := range clusterDeployments.Data {
+			k8sDeployment := &appv1.Deployment{}
+			err := steveV1.ConvertToK8sType(deployment.JSONResp, k8sDeployment)
+			if err != nil {
+				return false, nil
+			}
+
+			if slices.Contains(requiredDeployments, k8sDeployment.Name) {
+				requiredDeployments = slices.Delete(requiredDeployments, slices.Index(requiredDeployments, k8sDeployment.Name), slices.Index(requiredDeployments, k8sDeployment.Name)+1)
+			}
+		}
+		if len(requiredDeployments) != 0 {
+			return false, nil
+		}
+
+		return true, nil
+	})
+
+	if err != nil {
+		return fmt.Errorf("Not all required deployments exist: %v", requiredDeployments)
+	}
+
+	logrus.Debug("Verifying all deployments")
+	var failedDeployments []appv1.Deployment
+	err = kwait.PollUntilContextTimeout(context.TODO(), 5*time.Second, defaults.TenMinuteTimeout, true, func(ctx context.Context) (done bool, err error) {
+		clusterDeployments, err := deploymentClient.List(nil)
+		if err != nil {
+			return false, nil
+		}
+
+		failedDeployments = []appv1.Deployment{}
+		for _, deploymentObj := range clusterDeployments.Data {
+			k8sDeployment := &appv1.Deployment{}
+			err := steveV1.ConvertToK8sType(deploymentObj.JSONResp, k8sDeployment)
+			if err != nil {
+				return false, nil
+			}
+
+			if k8sDeployment.Status.AvailableReplicas != *k8sDeployment.Spec.Replicas {
+				failedDeployments = append(failedDeployments, *k8sDeployment)
+				return false, nil
+			}
+		}
+
+		return true, nil
+	})
+
+	if len(failedDeployments) > 0 {
+		for _, deploymentObj := range failedDeployments {
+			
+			for _, condition := range deployment.Status.Conditions {
+				logrus.Error()
+			}
+	}
+
+	return nil
 }
