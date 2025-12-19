@@ -75,7 +75,7 @@ require (
 	github.com/rancher/shepherd v0.0.0-20251203195144-c9f6483abe67
 	github.com/rancher/tests/actions v0.0.0-20251111162746-32a475483166
 	github.com/rancher/tests/interoperability v0.0.0-00010101000000-000000000000
-	github.com/rancher/tfp-automation v0.0.0-20251217185034-65ffce5e7b82
+	github.com/rancher/tfp-automation v0.0.0-20251219210947-f4a1a9882c29
 	go.qase.io/qase-api-client v0.0.0-00010101000000-000000000000
 )
 
