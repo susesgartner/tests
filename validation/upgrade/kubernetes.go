@@ -20,6 +20,7 @@ import (
 	"github.com/rancher/tests/actions/clusters"
 	"github.com/rancher/tests/actions/provisioning"
 	"github.com/rancher/tests/actions/upgradeinput"
+	"github.com/rancher/tests/actions/workloads/deployment"
 	"github.com/rancher/tests/actions/workloads/pods"
 
 	kcluster "github.com/rancher/shepherd/extensions/kubeapi/cluster"
@@ -86,6 +87,10 @@ func DownstreamCluster(u *suite.Suite, testName string, client *rancher.Client, 
 
 		logrus.Infof("Verifying the cluster is ready (%s)", upgradedCluster.Name)
 		provisioning.VerifyClusterReady(u.T(), client, upgradedCluster)
+
+		logrus.Infof("Verifying cluster deployments (%s)", upgradedCluster.Name)
+		err = deployment.VerifyClusterDeployments(client, upgradedCluster)
+		require.NoError(u.T(), err)
 
 		logrus.Infof("Verifying cluster pods (%s)", upgradedCluster.Name)
 		err = pods.VerifyClusterPods(client, upgradedCluster)
