@@ -1,6 +1,6 @@
 //go:build validation || recurring
 
-package rke2k3s
+package rke2
 
 import (
 	"os"
@@ -33,7 +33,7 @@ type SnapshotRestoreWindowsTestSuite struct {
 	session      *session.Session
 	client       *rancher.Client
 	cattleConfig map[string]any
-	rke2Cluster  *v1.SteveAPIObject
+	cluster      *v1.SteveAPIObject
 }
 
 func (s *SnapshotRestoreWindowsTestSuite) TearDownSuite() {
@@ -69,6 +69,9 @@ func (s *SnapshotRestoreWindowsTestSuite) SetupSuite() {
 	awsEC2Configs := new(ec2.AWSEC2Configs)
 	operations.LoadObjectFromMap(ec2.ConfigurationFileKey, s.cattleConfig, awsEC2Configs)
 
+	rancherConfig := new(rancher.Config)
+	operations.LoadObjectFromMap(defaults.RancherConfigKey, s.cattleConfig, rancherConfig)
+
 	nodeRolesStandard := []provisioninginput.MachinePools{
 		provisioninginput.EtcdMachinePool,
 		provisioninginput.ControlPlaneMachinePool,
@@ -85,10 +88,16 @@ func (s *SnapshotRestoreWindowsTestSuite) SetupSuite() {
 
 	provider := provisioning.CreateProvider(clusterConfig.Provider)
 	machineConfigSpec := provider.LoadMachineConfigFunc(s.cattleConfig)
+	if rancherConfig.ClusterName == "" {
 
-	logrus.Info("Provisioning RKE2 windows cluster")
-	s.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), provider, *clusterConfig, machineConfigSpec, awsEC2Configs, true, true)
-	require.NoError(s.T(), err)
+		logrus.Info("Provisioning RKE2 windows cluster")
+		s.cluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), provider, *clusterConfig, machineConfigSpec, awsEC2Configs, true, true)
+		require.NoError(s.T(), err)
+	} else {
+		logrus.Infof("Using existing cluster %s", rancherConfig.ClusterName)
+		s.cluster, err = client.Steve.SteveType(stevetypes.Provisioning).ByID("fleet-default/" + s.client.RancherConfig.ClusterName)
+		require.NoError(s.T(), err)
+	}
 }
 
 func (s *SnapshotRestoreWindowsTestSuite) TestSnapshotRestoreWindows() {
@@ -101,17 +110,18 @@ func (s *SnapshotRestoreWindowsTestSuite) TestSnapshotRestoreWindows() {
 	tests := []struct {
 		name         string
 		etcdSnapshot *etcdsnapshot.Config
-		clusterID    string
+		cluster      *v1.SteveAPIObject
 	}{
-		{"RKE2_Windows_Restore", snapshotRestoreNone, s.rke2Cluster.ID},
+		{"RKE2_Windows_Restore", snapshotRestoreNone, s.cluster},
 	}
 
 	for _, tt := range tests {
-		cluster, err := s.client.Steve.SteveType(stevetypes.Provisioning).ByID(tt.clusterID)
-		require.NoError(s.T(), err)
-
+		var err error
 		s.Run(tt.name, func() {
-			err := etcdsnapshot.CreateAndValidateSnapshotRestore(s.client, cluster.Name, tt.etcdSnapshot, windowsContainerImage)
+			cluster, err := s.client.Steve.SteveType(stevetypes.Provisioning).ByID(tt.cluster.ID)
+			require.NoError(s.T(), err)
+
+			err = etcdsnapshot.CreateAndValidateSnapshotRestore(s.client, cluster.Name, tt.etcdSnapshot, windowsContainerImage)
 			require.NoError(s.T(), err)
 		})
 
