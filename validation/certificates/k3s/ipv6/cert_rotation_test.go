@@ -35,8 +35,7 @@ type CertRotationIPv6TestSuite struct {
 	session      *session.Session
 	client       *rancher.Client
 	cattleConfig map[string]any
-	rke2Cluster  *v1.SteveAPIObject
-	k3sCluster   *v1.SteveAPIObject
+	cluster      *v1.SteveAPIObject
 }
 
 func (c *CertRotationIPv6TestSuite) TearDownSuite() {
@@ -69,56 +68,58 @@ func (c *CertRotationIPv6TestSuite) SetupSuite() {
 	clusterConfig := new(clusters.ClusterConfig)
 	operations.LoadObjectFromMap(defaults.ClusterConfigKey, c.cattleConfig, clusterConfig)
 
-	provider := provisioning.CreateProvider(clusterConfig.Provider)
-	machineConfigSpec := provider.LoadMachineConfigFunc(c.cattleConfig)
+	rancherConfig := new(rancher.Config)
+	operations.LoadObjectFromMap(defaults.RancherConfigKey, c.cattleConfig, rancherConfig)
 
-	logrus.Info("Provisioning RKE2 cluster")
-	c.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(c.T(), standardUserClient, extClusters.RKE2ClusterType.String(), provider, *clusterConfig, machineConfigSpec, nil, true, false)
-	require.NoError(c.T(), err)
+	if rancherConfig.ClusterName == "" {
+		provider := provisioning.CreateProvider(clusterConfig.Provider)
+		machineConfigSpec := provider.LoadMachineConfigFunc(c.cattleConfig)
 
-	if clusterConfig.Advanced == nil {
-		clusterConfig.Advanced = &provisioninginput.Advanced{}
-	}
-
-	if clusterConfig.Advanced.MachineGlobalConfig == nil {
-		clusterConfig.Advanced.MachineGlobalConfig = &rkev1.GenericMap{
-			Data: map[string]any{},
+		if clusterConfig.Advanced == nil {
+			clusterConfig.Advanced = &provisioninginput.Advanced{}
 		}
+
+		if clusterConfig.Advanced.MachineGlobalConfig == nil {
+			clusterConfig.Advanced.MachineGlobalConfig = &rkev1.GenericMap{
+				Data: map[string]any{},
+			}
+		}
+
+		clusterConfig.Advanced.MachineGlobalConfig.Data["flannel-ipv6-masq"] = true
+
+		logrus.Info("Provisioning K3s cluster")
+		c.cluster, err = resources.ProvisionRKE2K3SCluster(c.T(), standardUserClient, extClusters.K3SClusterType.String(), provider, *clusterConfig, machineConfigSpec, nil, true, false)
+		require.NoError(c.T(), err)
+	} else {
+		logrus.Infof("Using existing cluster %s", rancherConfig.ClusterName)
+		c.cluster, err = client.Steve.SteveType(stevetypes.Provisioning).ByID("fleet-default/" + c.client.RancherConfig.ClusterName)
+		require.NoError(c.T(), err)
 	}
-
-	clusterConfig.Advanced.MachineGlobalConfig.Data["flannel-ipv6-masq"] = true
-
-	logrus.Info("Provisioning K3s cluster")
-	c.k3sCluster, err = resources.ProvisionRKE2K3SCluster(c.T(), standardUserClient, extClusters.K3SClusterType.String(), provider, *clusterConfig, machineConfigSpec, nil, true, false)
-	require.NoError(c.T(), err)
 }
 
 func (c *CertRotationIPv6TestSuite) TestCertRotationIPv6() {
 	tests := []struct {
-		name      string
-		clusterID string
+		name    string
+		cluster *v1.SteveAPIObject
 	}{
-		{"RKE2_IPv6_Certificate_Rotation", c.rke2Cluster.ID},
-		{"K3S_IPv6_Certificate_Rotation", c.k3sCluster.ID},
+		{"K3S_IPv6_Certificate_Rotation", c.cluster},
 	}
 
 	for _, tt := range tests {
-		cluster, err := c.client.Steve.SteveType(stevetypes.Provisioning).ByID(tt.clusterID)
-		require.NoError(c.T(), err)
-
+		var err error
 		c.Run(tt.name, func() {
-			logrus.Infof("Rotating certificates on cluster (%s)", cluster.Name)
-			require.NoError(c.T(), certificates.RotateCerts(c.client, cluster.Name))
+			logrus.Infof("Rotating certificates on cluster (%s)", tt.cluster.Name)
+			require.NoError(c.T(), certificates.RotateCerts(c.client, tt.cluster.Name))
 
-			logrus.Infof("Verifying the cluster is ready (%s)", cluster.Name)
-			provisioning.VerifyClusterReady(c.T(), c.client, cluster)
+			logrus.Infof("Verifying the cluster is ready (%s)", tt.cluster.Name)
+			provisioning.VerifyClusterReady(c.T(), c.client, tt.cluster)
 
-			logrus.Infof("Verifying cluster deployments (%s)", cluster.Name)
-			err = deployment.VerifyClusterDeployments(c.client, cluster)
+			logrus.Infof("Verifying cluster deployments (%s)", tt.cluster.Name)
+			err = deployment.VerifyClusterDeployments(c.client, tt.cluster)
 			require.NoError(c.T(), err)
 
-			logrus.Infof("Verifying cluster pods (%s)", cluster.Name)
-			err = pods.VerifyClusterPods(c.client, cluster)
+			logrus.Infof("Verifying cluster pods (%s)", tt.cluster.Name)
+			err = pods.VerifyClusterPods(c.client, tt.cluster)
 			require.NoError(c.T(), err)
 		})
 
