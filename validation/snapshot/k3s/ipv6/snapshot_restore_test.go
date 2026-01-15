@@ -1,11 +1,12 @@
-//go:build (validation || recurring || extended || infra.any || cluster.any) && !sanity && !stress
+//go:build validation || recurring
 
-package rke2k3s
+package ipv6
 
 import (
 	"os"
 	"testing"
 
+	rkev1 "github.com/rancher/rancher/pkg/apis/rke.cattle.io/v1"
 	"github.com/rancher/shepherd/clients/rancher"
 	v1 "github.com/rancher/shepherd/clients/rancher/v1"
 	extClusters "github.com/rancher/shepherd/extensions/clusters"
@@ -18,6 +19,7 @@ import (
 	"github.com/rancher/tests/actions/etcdsnapshot"
 	"github.com/rancher/tests/actions/logging"
 	"github.com/rancher/tests/actions/provisioning"
+	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/rancher/tests/actions/qase"
 	resources "github.com/rancher/tests/validation/provisioning/resources/provisioncluster"
 	standard "github.com/rancher/tests/validation/provisioning/resources/standarduser"
@@ -27,24 +29,22 @@ import (
 )
 
 const (
-	containerImage        = "nginx"
-	windowsContainerImage = "mcr.microsoft.com/windows/servercore/iis"
+	containerImage = "nginx"
 )
 
-type SnapshotRestoreTestSuite struct {
+type SnapshotIPv6RestoreTestSuite struct {
 	suite.Suite
 	session      *session.Session
 	client       *rancher.Client
 	cattleConfig map[string]any
-	rke2Cluster  *v1.SteveAPIObject
-	k3sCluster   *v1.SteveAPIObject
+	cluster      *v1.SteveAPIObject
 }
 
-func (s *SnapshotRestoreTestSuite) TearDownSuite() {
+func (s *SnapshotIPv6RestoreTestSuite) TearDownSuite() {
 	s.session.Cleanup()
 }
 
-func (s *SnapshotRestoreTestSuite) SetupSuite() {
+func (s *SnapshotIPv6RestoreTestSuite) SetupSuite() {
 	testSession := session.NewSession()
 	s.session = testSession
 
@@ -70,16 +70,33 @@ func (s *SnapshotRestoreTestSuite) SetupSuite() {
 	clusterConfig := new(clusters.ClusterConfig)
 	operations.LoadObjectFromMap(defaults.ClusterConfigKey, s.cattleConfig, clusterConfig)
 
+	rancherConfig := new(rancher.Config)
+	operations.LoadObjectFromMap(defaults.RancherConfigKey, s.cattleConfig, rancherConfig)
+
 	provider := provisioning.CreateProvider(clusterConfig.Provider)
 	machineConfigSpec := provider.LoadMachineConfigFunc(s.cattleConfig)
 
-	logrus.Info("Provisioning RKE2 cluster")
-	s.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), provider, *clusterConfig, machineConfigSpec, nil, false, false)
-	require.NoError(s.T(), err)
+	if rancherConfig.ClusterName == "" {
+		if clusterConfig.Advanced == nil {
+			clusterConfig.Advanced = &provisioninginput.Advanced{}
+		}
 
-	logrus.Info("Provisioning K3S cluster")
-	s.k3sCluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.K3SClusterType.String(), provider, *clusterConfig, machineConfigSpec, nil, false, false)
-	require.NoError(s.T(), err)
+		if clusterConfig.Advanced.MachineGlobalConfig == nil {
+			clusterConfig.Advanced.MachineGlobalConfig = &rkev1.GenericMap{
+				Data: map[string]any{},
+			}
+		}
+
+		clusterConfig.Advanced.MachineGlobalConfig.Data["flannel-ipv6-masq"] = true
+
+		logrus.Info("Provisioning K3s cluster")
+		s.cluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.K3SClusterType.String(), provider, *clusterConfig, machineConfigSpec, nil, false, false)
+		require.NoError(s.T(), err)
+	} else {
+		logrus.Infof("Using existing cluster %s", rancherConfig.ClusterName)
+		s.cluster, err = client.Steve.SteveType(stevetypes.Provisioning).ByID("fleet-default/" + s.client.RancherConfig.ClusterName)
+		require.NoError(s.T(), err)
+	}
 }
 
 func snapshotRestoreConfigs() []*etcdsnapshot.Config {
@@ -104,28 +121,26 @@ func snapshotRestoreConfigs() []*etcdsnapshot.Config {
 	}
 }
 
-func (s *SnapshotRestoreTestSuite) TestSnapshotRestore() {
+func (s *SnapshotIPv6RestoreTestSuite) TestSnapshotIPv6Restore() {
 	snapshotRestoreConfigRKE2 := snapshotRestoreConfigs()
-	snapshotRestoreConfigK3s := snapshotRestoreConfigs()
+
 	tests := []struct {
 		name         string
 		etcdSnapshot *etcdsnapshot.Config
-		clusterID    string
+		cluster      *v1.SteveAPIObject
 	}{
-		{"RKE2_Restore_ETCD", snapshotRestoreConfigRKE2[0], s.rke2Cluster.ID},
-		{"RKE2_Restore_ETCD_K8sVersion", snapshotRestoreConfigRKE2[1], s.rke2Cluster.ID},
-		{"RKE2_Restore_Upgrade_Strategy", snapshotRestoreConfigRKE2[2], s.rke2Cluster.ID},
-		{"K3S_Restore_ETCD", snapshotRestoreConfigK3s[0], s.k3sCluster.ID},
-		{"K3S_Restore_ETCD_K8sVersion", snapshotRestoreConfigK3s[1], s.k3sCluster.ID},
-		{"K3S_Restore_Upgrade_Strategy", snapshotRestoreConfigK3s[2], s.k3sCluster.ID},
+		{"K3S_IPv6_Restore_ETCD", snapshotRestoreConfigRKE2[0], s.cluster},
+		{"K3S_IPv6_Restore_ETCD_K8sVersion", snapshotRestoreConfigRKE2[1], s.cluster},
+		{"K3S_IPv6_Restore_Upgrade_Strategy", snapshotRestoreConfigRKE2[2], s.cluster},
 	}
 
 	for _, tt := range tests {
-		cluster, err := s.client.Steve.SteveType(stevetypes.Provisioning).ByID(tt.clusterID)
-		require.NoError(s.T(), err)
-
+		var err error
 		s.Run(tt.name, func() {
-			err := etcdsnapshot.CreateAndValidateSnapshotRestore(s.client, cluster.Name, tt.etcdSnapshot, containerImage)
+			cluster, err := s.client.Steve.SteveType(stevetypes.Provisioning).ByID(tt.cluster.ID)
+			require.NoError(s.T(), err)
+
+			err = etcdsnapshot.CreateAndValidateSnapshotRestore(s.client, cluster.Name, tt.etcdSnapshot, containerImage)
 			require.NoError(s.T(), err)
 		})
 
@@ -137,6 +152,6 @@ func (s *SnapshotRestoreTestSuite) TestSnapshotRestore() {
 	}
 }
 
-func TestSnapshotRestoreTestSuite(t *testing.T) {
-	suite.Run(t, new(SnapshotRestoreTestSuite))
+func TestSnapshotIPv6RestoreTestSuite(t *testing.T) {
+	suite.Run(t, new(SnapshotIPv6RestoreTestSuite))
 }

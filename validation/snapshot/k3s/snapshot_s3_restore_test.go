@@ -1,6 +1,6 @@
-//go:build validation || recurring
+//go:build (validation || extended || infra.any || cluster.any) && !sanity && !stress
 
-package rke2k3s
+package k3s
 
 import (
 	"os"
@@ -22,24 +22,24 @@ import (
 	resources "github.com/rancher/tests/validation/provisioning/resources/provisioncluster"
 	standard "github.com/rancher/tests/validation/provisioning/resources/standarduser"
 	"github.com/sirupsen/logrus"
+
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
-type SnapshotRecurringTestSuite struct {
+type S3SnapshotRestoreTestSuite struct {
 	suite.Suite
 	session      *session.Session
 	client       *rancher.Client
 	cattleConfig map[string]any
-	rke2Cluster  *v1.SteveAPIObject
-	k3sCluster   *v1.SteveAPIObject
+	cluster      *v1.SteveAPIObject
 }
 
-func (s *SnapshotRecurringTestSuite) TearDownSuite() {
+func (s *S3SnapshotRestoreTestSuite) TearDownSuite() {
 	s.session.Cleanup()
 }
 
-func (s *SnapshotRecurringTestSuite) SetupSuite() {
+func (s *S3SnapshotRestoreTestSuite) SetupSuite() {
 	testSession := session.NewSession()
 	s.session = testSession
 
@@ -65,40 +65,45 @@ func (s *SnapshotRecurringTestSuite) SetupSuite() {
 	clusterConfig := new(clusters.ClusterConfig)
 	operations.LoadObjectFromMap(defaults.ClusterConfigKey, s.cattleConfig, clusterConfig)
 
+	rancherConfig := new(rancher.Config)
+	operations.LoadObjectFromMap(defaults.RancherConfigKey, s.cattleConfig, rancherConfig)
+
 	provider := provisioning.CreateProvider(clusterConfig.Provider)
 	machineConfigSpec := provider.LoadMachineConfigFunc(s.cattleConfig)
 
-	logrus.Info("Provisioning RKE2 cluster")
-	s.rke2Cluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.RKE2ClusterType.String(), provider, *clusterConfig, machineConfigSpec, nil, true, false)
-	require.NoError(s.T(), err)
-
-	logrus.Info("Provisioning K3S cluster")
-	s.k3sCluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.K3SClusterType.String(), provider, *clusterConfig, machineConfigSpec, nil, true, false)
-	require.NoError(s.T(), err)
+	if rancherConfig.ClusterName == "" {
+		logrus.Info("Provisioning K3S cluster")
+		s.cluster, err = resources.ProvisionRKE2K3SCluster(s.T(), standardUserClient, extClusters.K3SClusterType.String(), provider, *clusterConfig, machineConfigSpec, nil, false, false)
+		require.NoError(s.T(), err)
+	} else {
+		logrus.Infof("Using existing cluster %s", rancherConfig.ClusterName)
+		s.cluster, err = client.Steve.SteveType(stevetypes.Provisioning).ByID("fleet-default/" + s.client.RancherConfig.ClusterName)
+		require.NoError(s.T(), err)
+	}
 }
 
-func (s *SnapshotRecurringTestSuite) TestSnapshotRecurringRestores() {
-	snapshotRestoreFiveTimes := &etcdsnapshot.Config{
+func (s *S3SnapshotRestoreTestSuite) TestS3SnapshotRestore() {
+	snapshotRestoreNone := &etcdsnapshot.Config{
 		UpgradeKubernetesVersion: "",
 		SnapshotRestore:          "none",
-		RecurringRestores:        5,
+		RecurringRestores:        1,
 	}
 
 	tests := []struct {
 		name         string
 		etcdSnapshot *etcdsnapshot.Config
-		clusterID    string
+		cluster      *v1.SteveAPIObject
 	}{
-		{"RKE2_Recurring_Restores", snapshotRestoreFiveTimes, s.rke2Cluster.ID},
-		{"K3S_Recurring_Restores", snapshotRestoreFiveTimes, s.k3sCluster.ID},
+		{"K3S_S3_Restore", snapshotRestoreNone, s.cluster},
 	}
 
 	for _, tt := range tests {
-		cluster, err := s.client.Steve.SteveType(stevetypes.Provisioning).ByID(tt.clusterID)
-		require.NoError(s.T(), err)
-
+		var err error
 		s.Run(tt.name, func() {
-			err := etcdsnapshot.CreateAndValidateSnapshotRestore(s.client, cluster.Name, tt.etcdSnapshot, containerImage)
+			cluster, err := s.client.Steve.SteveType(stevetypes.Provisioning).ByID(tt.cluster.ID)
+			require.NoError(s.T(), err)
+
+			err = etcdsnapshot.CreateAndValidateSnapshotRestore(s.client, cluster.Name, tt.etcdSnapshot, containerImage)
 			require.NoError(s.T(), err)
 		})
 
@@ -110,6 +115,6 @@ func (s *SnapshotRecurringTestSuite) TestSnapshotRecurringRestores() {
 	}
 }
 
-func TestSnapshotRecurringTestSuite(t *testing.T) {
-	suite.Run(t, new(SnapshotRecurringTestSuite))
+func TestS3SnapshotRestoreTestSuite(t *testing.T) {
+	suite.Run(t, new(S3SnapshotRestoreTestSuite))
 }
