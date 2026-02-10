@@ -1,4 +1,4 @@
-//go:build validation || recurring || pit.daily
+//go:build validation || recurring || ipv6 || dualstack || pit.daily
 
 package rke2
 

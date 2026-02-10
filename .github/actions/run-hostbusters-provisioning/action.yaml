@@ -7,6 +7,10 @@ inputs:
     description: "Enable reporting"
     required: false
     default: "false"
+  tags:
+    description: "Test tags to run (comma-separated)"
+    required: false
+    default: "recurring"
 
 runs:
   using: composite
@@ -22,7 +26,7 @@ runs:
           --packages=github.com/rancher/tests/validation/provisioning/k3s \
           --junitfile results_k3s.xml \
           --jsonfile results_k3s.json \
-          -- -timeout=3h -tags=recurring -v
+          -- -timeout=3h -tags=${{ inputs.tags }} -v
 
         k3s_exit=$?
         echo "k3s_exit=$k3s_exit" >> "$GITHUB_ENV"
@@ -44,7 +48,7 @@ runs:
           --packages=github.com/rancher/tests/validation/provisioning/rke2 \
           --junitfile results_rke2.xml \
           --jsonfile results_rke2.json \
-          -- -timeout=3h -tags=recurring -v
+          -- -timeout=3h -tags=${{ inputs.tags }} -v
 
         rke2_exit=$?
         echo "rke2_exit=$rke2_exit" >> "$GITHUB_ENV"

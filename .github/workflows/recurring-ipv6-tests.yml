@@ -313,7 +313,8 @@ jobs:
         with:
           suite: ${{ matrix.suite }}
           reporting: ${{ env.REPORTING_ENABLED }}
-        uses: ./.github/actions/run-hostbusters-ipv6-test-suites
+          tags: ipv6
+        uses: ./.github/actions/run-hostbusters-test-suites
 
       - name: Cleanup Infrastructure
         if: always()
@@ -643,7 +644,8 @@ jobs:
         with:
           suite: ${{ matrix.suite }}
           reporting: ${{ env.REPORTING_ENABLED }}
-        uses: ./.github/actions/run-hostbusters-ipv6-test-suites
+          tags: ipv6
+        uses: ./.github/actions/run-hostbusters-test-suites
 
       - name: Cleanup Infrastructure
         if: always()
