@@ -3,10 +3,10 @@
 package airgap
 
 import (
+	"os"
 	"testing"
 
 	provv1 "github.com/rancher/rancher/pkg/apis/provisioning.cattle.io/v1"
-	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
 	steveV1 "github.com/rancher/shepherd/clients/rancher/v1"
 	"github.com/rancher/shepherd/pkg/config/operations"
@@ -18,6 +18,9 @@ import (
 	"github.com/rancher/tests/actions/registries"
 	"github.com/rancher/tests/actions/workloads/deployment"
 	"github.com/rancher/tests/actions/workloads/pods"
+	tfpConfig "github.com/rancher/tfp-automation/config"
+	"github.com/rancher/tfp-automation/framework/cleanup"
+	tfpCustom "github.com/rancher/tfp-automation/tests/infrastructure/downstream/custom"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
@@ -38,8 +41,9 @@ func TestCustomK3SAirgap(t *testing.T) {
 		name         string
 		client       *rancher.Client
 		machinePools []provisioninginput.MachinePools
+		nodePools    []tfpConfig.Nodepool
 	}{
-		{"K3S_Airgap_Custom", r.standardUserClient, nodeRolesStandard},
+		{"K3S_Airgap_Custom", r.standardUserClient, nodeRolesStandard, []tfpConfig.Nodepool{{Quantity: 1, Etcd: true, Controlplane: true, Worker: true}}},
 	}
 
 	for _, tt := range tests {
@@ -56,29 +60,28 @@ func TestCustomK3SAirgap(t *testing.T) {
 		operations.LoadObjectFromMap(defaults.ClusterConfigKey, r.cattleConfig, clusterConfig)
 
 		clusterConfig.MachinePools = tt.machinePools
+		rancherConfig, terraformConfig, terratestConfig, _ := tfpConfig.LoadTFPConfigs(r.cattleConfig)
+		terratestConfig.Nodepools = tt.nodePools
 
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			externalNodeProvider := provisioning.ExternalNodeProviderSetup(clusterConfig.NodeProvider)
-
-			awsEC2Configs := new(ec2.AWSEC2Configs)
-			operations.LoadObjectFromMap(ec2.ConfigurationFileKey, r.cattleConfig, awsEC2Configs)
-
 			logrus.Info("Provisioning cluster")
-			cluster, err := provisioning.CreateProvisioningAirgapCustomCluster(tt.client, clusterConfig, &externalNodeProvider, awsEC2Configs, r.terraformConfig.AirgapBastion)
-			require.NoError(t, err)
+			nestedRancherModuleDir, perTestTerraformOptions, keyPath, cluster := tfpCustom.CreateCustomCluster(t, tt.client, rancherConfig, terraformConfig, terratestConfig, defaults.K3S, "validation/provisioning/airgap")
+			defer os.RemoveAll(nestedRancherModuleDir)
+			defer cleanup.Cleanup(t, perTestTerraformOptions, keyPath)
 
 			logrus.Infof("Verifying the cluster is ready (%s)", cluster.Name)
-			err = provisioning.VerifyClusterReady(tt.client, cluster)
+			var err error
+			err = provisioning.VerifyClusterReady(r.client, cluster)
 			require.NoError(t, err)
 
 			logrus.Infof("Verifying cluster deployments (%s)", cluster.Name)
-			err = deployment.VerifyClusterDeployments(tt.client, cluster)
+			err = deployment.VerifyClusterDeployments(r.client, cluster)
 			require.NoError(t, err)
 
 			logrus.Infof("Verifying cluster pods (%s)", cluster.Name)
-			err = pods.VerifyClusterPods(tt.client, cluster)
+			err = pods.VerifyClusterPods(r.client, cluster)
 			require.NoError(t, err)
 
 			clusterStatus := &provv1.ClusterStatus{}

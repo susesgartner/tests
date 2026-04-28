@@ -3,56 +3,48 @@
 package airgap
 
 import (
+	"os"
 	"testing"
 
 	provv1 "github.com/rancher/rancher/pkg/apis/provisioning.cattle.io/v1"
-	"github.com/rancher/shepherd/clients/ec2"
 	"github.com/rancher/shepherd/clients/rancher"
 	steveV1 "github.com/rancher/shepherd/clients/rancher/v1"
-	"github.com/rancher/shepherd/pkg/config/operations"
-	"github.com/rancher/tests/actions/clusters"
 	"github.com/rancher/tests/actions/config/defaults"
 	"github.com/rancher/tests/actions/provisioning"
-	"github.com/rancher/tests/actions/provisioninginput"
 	"github.com/rancher/tests/actions/qase"
 	"github.com/rancher/tests/actions/registries"
 	"github.com/rancher/tests/actions/workloads/deployment"
 	"github.com/rancher/tests/actions/workloads/pods"
+	tfpConfig "github.com/rancher/tfp-automation/config"
+	"github.com/rancher/tfp-automation/framework/cleanup"
+	tfpCustom "github.com/rancher/tfp-automation/tests/infrastructure/downstream/custom"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCustomRKE2Airgap(t *testing.T) {
 	r := airgapSetup(t, defaults.RKE2)
-
-	nodeRolesStandard := []provisioninginput.MachinePools{
-		provisioninginput.EtcdMachinePool,
-		provisioninginput.ControlPlaneMachinePool,
-		provisioninginput.WorkerMachinePool,
-	}
-
-	nodeRolesDedicatedWindows := []provisioninginput.MachinePools{
-		provisioninginput.EtcdMachinePool,
-		provisioninginput.ControlPlaneMachinePool,
-		provisioninginput.WorkerMachinePool,
-		provisioninginput.WindowsMachinePool,
-	}
-
-	nodeRolesStandard[0].MachinePoolConfig.Quantity = 1
-	nodeRolesStandard[1].MachinePoolConfig.Quantity = 1
-	nodeRolesStandard[2].MachinePoolConfig.Quantity = 1
-
-	clusterConfig := new(clusters.ClusterConfig)
-	operations.LoadObjectFromMap(defaults.ClusterConfigKey, r.cattleConfig, clusterConfig)
+	nodeRolesStandard := []tfpConfig.Nodepool{{Quantity: 1, Etcd: true}, {Quantity: 1, Controlplane: true}, {Quantity: 1, Worker: true}}
+	nodeRolesDedicatedWindows := []tfpConfig.Nodepool{{Quantity: 1, Etcd: true}, {Quantity: 1, Controlplane: true}, {Quantity: 1, Worker: true}, {Quantity: 1, Windows: true}}
 
 	tests := []struct {
-		name         string
-		client       *rancher.Client
-		machinePools []provisioninginput.MachinePools
-		isWindows    bool
+		name        string
+		client      *rancher.Client
+		clusterType string
+		nodePools   []tfpConfig.Nodepool
 	}{
-		{"RKE2_Airgap_Custom", r.standardUserClient, nodeRolesStandard, false},
-		{"RKE2_Airgap_Custom_Windows", r.standardUserClient, nodeRolesDedicatedWindows, true},
+		{
+			"RKE2_Airgap_Custom",
+			r.standardUserClient,
+			defaults.RKE2,
+			nodeRolesStandard,
+		},
+		{
+			"RKE2_Airgap_Custom_Windows",
+			r.standardUserClient,
+			"rke2_windows_2022",
+			nodeRolesDedicatedWindows,
+		},
 	}
 
 	for _, tt := range tests {
@@ -65,40 +57,28 @@ func TestCustomRKE2Airgap(t *testing.T) {
 			}
 		})
 
-		clusterConfig := new(clusters.ClusterConfig)
-		operations.LoadObjectFromMap(defaults.ClusterConfigKey, r.cattleConfig, clusterConfig)
-
-		clusterConfig.MachinePools = tt.machinePools
+		rancherConfig, terraformConfig, terratestConfig, _ := tfpConfig.LoadTFPConfigs(r.cattleConfig)
+		terratestConfig.Nodepools = tt.nodePools
 
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			externalNodeProvider := provisioning.ExternalNodeProviderSetup(clusterConfig.NodeProvider)
-
-			awsEC2Configs := new(ec2.AWSEC2Configs)
-			operations.LoadObjectFromMap(ec2.ConfigurationFileKey, r.cattleConfig, awsEC2Configs)
-
-			if tt.isWindows {
-				windowsMachineConfigs := externalNodeProvider.GetWindowsPoolsFunc(tt.client, *awsEC2Configs)
-				if len(windowsMachineConfigs) == 0 {
-					t.Skip("Windows test requires a windows machine pool")
-				}
-			}
-
 			logrus.Info("Provisioning cluster")
-			cluster, err := provisioning.CreateProvisioningAirgapCustomCluster(tt.client, clusterConfig, &externalNodeProvider, awsEC2Configs, r.terraformConfig.AirgapBastion)
-			require.NoError(t, err)
+			nestedRancherModuleDir, perTestTerraformOptions, keyPath, cluster := tfpCustom.CreateCustomCluster(t, tt.client, rancherConfig, terraformConfig, terratestConfig, tt.clusterType, "validation/provisioning/airgap")
+			defer os.RemoveAll(nestedRancherModuleDir)
+			defer cleanup.Cleanup(t, perTestTerraformOptions, keyPath)
 
 			logrus.Infof("Verifying the cluster is ready (%s)", cluster.Name)
-			err = provisioning.VerifyClusterReady(tt.client, cluster)
+			var err error
+			err = provisioning.VerifyClusterReady(r.client, cluster)
 			require.NoError(t, err)
 
 			logrus.Infof("Verifying cluster deployments (%s)", cluster.Name)
-			err = deployment.VerifyClusterDeployments(tt.client, cluster)
+			err = deployment.VerifyClusterDeployments(r.client, cluster)
 			require.NoError(t, err)
 
 			logrus.Infof("Verifying cluster pods (%s)", cluster.Name)
-			err = pods.VerifyClusterPods(tt.client, cluster)
+			err = pods.VerifyClusterPods(r.client, cluster)
 			require.NoError(t, err)
 
 			clusterStatus := &provv1.ClusterStatus{}

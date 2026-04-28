@@ -43,7 +43,7 @@ awsMachineConfigs:
   awsMachineConfig:
   - roles: ["etcd","controlplane","worker"]
     ami: "<required>"
-    instanceType: "t3a.medium"
+    instanceType: "t2.xlarge"
     volumeType: "<required>"
     rootSize: "<required>"
     sshUser: "<required>"

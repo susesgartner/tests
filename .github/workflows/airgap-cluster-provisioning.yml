@@ -161,6 +161,7 @@ jobs:
             defaultClusterRoleForProjectMembers: "true"
             enableNetworkPolicy: false
             provider: "${{ vars.PROVIDER_AMAZON }}"
+            downstreamClusterProvider: "aws"
             privateKeyPath: "${{ secrets.TFP_SSH_PRIVATE_KEY_PATH }}"
             resourcePrefix: "${{ env.HOSTNAME_PREFIX }}"
             privateRegistries:
@@ -186,6 +187,10 @@ jobs:
               awsUser: "${{ secrets.AWS_USER }}"
               sshConnectionType: "${{ vars.SSH_CONNECTION_TYPE }}" 
               timeout: "${{ vars.TIMEOUT }}"
+              windowsAWSUser: "${{ secrets.AWS_WINDOWS_USER }}"
+              windows2022AMI: "${{ secrets.WINDOWS_2022_AMI }}"
+              windows2022Password: "${{ secrets.AWS_WINDOWS_2022_PASSWORD }}"
+              windowsInstanceType: "${{ vars.AWS_WINDOWS_INSTANCE_TYPE }}"
               ipAddressType: "${{ vars.IP_ADDRESS_TYPE }}"
               loadBalancerType: "${{ vars.LOAD_BALANCER_TYPE }}"
               targetType: "${{ vars.TARGET_TYPE }}"
@@ -467,6 +472,7 @@ jobs:
             defaultClusterRoleForProjectMembers: "true"
             enableNetworkPolicy: false
             provider: "${{ vars.PROVIDER_AMAZON }}"
+            downstreamClusterProvider: "aws"
             privateKeyPath: "${{ secrets.TFP_SSH_PRIVATE_KEY_PATH }}"
             resourcePrefix: "${{ env.HOSTNAME_PREFIX }}"
             privateRegistries:
@@ -492,6 +498,10 @@ jobs:
               awsUser: "${{ secrets.AWS_USER }}"
               sshConnectionType: "${{ vars.SSH_CONNECTION_TYPE }}" 
               timeout: "${{ vars.TIMEOUT }}"
+              windowsAWSUser: "${{ secrets.AWS_WINDOWS_USER }}"
+              windows2022AMI: "${{ secrets.WINDOWS_2022_AMI }}"
+              windows2022Password: "${{ secrets.AWS_WINDOWS_2022_PASSWORD }}"
+              windowsInstanceType: "${{ vars.AWS_WINDOWS_INSTANCE_TYPE }}"
               ipAddressType: "${{ vars.IP_ADDRESS_TYPE }}"
               loadBalancerType: "${{ vars.LOAD_BALANCER_TYPE }}"
               targetType: "${{ vars.TARGET_TYPE }}"
@@ -773,6 +783,7 @@ jobs:
             defaultClusterRoleForProjectMembers: "true"
             enableNetworkPolicy: false
             provider: "${{ vars.PROVIDER_AMAZON }}"
+            downstreamClusterProvider: "aws"
             privateKeyPath: "${{ secrets.TFP_SSH_PRIVATE_KEY_PATH }}"
             resourcePrefix: "${{ env.HOSTNAME_PREFIX }}"
             privateRegistries:
@@ -798,6 +809,10 @@ jobs:
               awsUser: "${{ secrets.AWS_USER }}"
               sshConnectionType: "${{ vars.SSH_CONNECTION_TYPE }}" 
               timeout: "${{ vars.TIMEOUT }}"
+              windowsAWSUser: "${{ secrets.AWS_WINDOWS_USER }}"
+              windows2022AMI: "${{ secrets.WINDOWS_2022_AMI }}"
+              windows2022Password: "${{ secrets.AWS_WINDOWS_2022_PASSWORD }}"
+              windowsInstanceType: "${{ vars.AWS_WINDOWS_INSTANCE_TYPE }}"
               ipAddressType: "${{ vars.IP_ADDRESS_TYPE }}"
               loadBalancerType: "${{ vars.LOAD_BALANCER_TYPE }}"
               targetType: "${{ vars.TARGET_TYPE }}"

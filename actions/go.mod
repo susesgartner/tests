@@ -10,6 +10,7 @@ replace (
 
 	github.com/rancher/rancher/pkg/apis => github.com/rancher/rancher/pkg/apis v0.0.0-20260105201356-c4811cb9f2af
 	github.com/rancher/rancher/pkg/client => github.com/rancher/rancher/pkg/client v0.0.0-20260105201356-c4811cb9f2af
+	github.com/rancher/tfp-automation => github.com/susesgartner/tfp-automation v0.0.0-20260430215157-f8d456c70f78
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc => go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.53.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp => go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.53.0
 	go.opentelemetry.io/otel => go.opentelemetry.io/otel v1.28.0
@@ -58,7 +59,7 @@ replace (
 require (
 	github.com/qase-tms/qase-go/qase-api-client v1.2.1
 	github.com/rancher/rancher/pkg/apis v0.0.0
-	github.com/rancher/shepherd v0.0.0-20260417171403-fce40497b62e
+	github.com/rancher/shepherd v0.0.0-20260427181519-3a8ec0abcf3c
 	github.com/rancher/tfp-automation v0.0.0-20260428144157-a2d4a5a258c7
 )
 
